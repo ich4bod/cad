@@ -58,6 +58,26 @@ nginx on :3000, static files only. No backend, no accounts, nothing stored.
 three.js r180 (MIT) is vendored into `site/vendor/three/` — no CDN, no
 third-party runtime request, same as the rest of the estate.
 
+## Link preview
+
+`site/og.png` is the 1200×630 card a shared link previews with, and the
+OpenGraph and Twitter tags in `site/index.html` point at it. The card is not
+generated here: it comes from `tools/make-og.sh` in the
+[ichabod-crane-net](https://github.com/ich4bod/ichabod-crane-net) repo, so
+every app under the domain shares one design — the same pumpkin, the same
+amber rule.
+
+```sh
+# from a checkout of ichabod-crane-net
+tools/make-og.sh "Shape Maker" "A 3D modelling toy for kids." \
+                 "Tap a shape, stack it, print the STL." \
+                 "cad.ichabod-crane.net" /path/to/cad/site/og.png
+```
+
+The `og:image:width` and `og:image:height` tags are load-bearing: scrapers
+that will not fetch and measure the image themselves use them to decide
+between a large preview card and a one-line grey link.
+
 ## Verifying it
 
 Two tools, both run against the **live** site rather than the source.
