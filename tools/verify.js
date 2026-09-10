@@ -260,7 +260,7 @@ function assertSTL(bytes, expected, label) {
   s = await shapes(page);
   const base = s[0];
 
-  // Build the column the way a child would: lift each ball by three grid steps
+  // Build the column the way a kid would: lift each ball by three grid steps
   // (30mm, one ball's height) so it rests on the one below, then drag it over
   // the base cell. Everything goes through the same buttons and the same
   // pointer drags — nothing is poked into the model directly.

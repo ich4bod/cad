@@ -1,7 +1,7 @@
 /*
   Shape Maker.
 
-  Sizing rule for every control: nothing a seven-year-old has to hit is
+  Sizing rule for every control: nothing a kid has to hit is
   smaller than 56px, and every button carries a word as well as a picture.
   There is no hover-only affordance anywhere — this is built for a finger.
 */
@@ -165,7 +165,7 @@ button:disabled {
 
 /* The chosen shape's palette button is not a mode — nothing stays pressed.
    Only the "which shape is selected in the scene" state is shown, and it is
-   shown in the scene itself with an outline, where a child is already looking. */
+   shown in the scene itself with an outline, where a kid is already looking. */
 
 /* ---------- back-link ---------- */
 

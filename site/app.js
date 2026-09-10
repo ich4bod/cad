@@ -1,8 +1,8 @@
 /*
-  Shape Maker — a 3D modelling toy that fits in a seven-year-old's hands.
+  Shape Maker — a 3D modelling toy that fits in a kid's hands.
 
   The whole program is four primitives on a 10mm grid. There are no booleans,
-  no sketches, no extrudes, and deliberately no text input anywhere: a child
+  no sketches, no extrudes, and deliberately no text input anywhere: a kid
   who cannot read a dimension box can still build a snowman and print it.
 
   Two design decisions carry most of the weight:
@@ -14,7 +14,7 @@
   2. Undo is a full state snapshot, not an inverse-operation stack. Snapshots
      cost nothing at this scale and they cannot drift out of sync with the
      scene, so the Undo button always works — which is the actual requirement.
-     A child who cannot undo a mistake stops playing.
+     A kid who cannot undo a mistake stops playing.
 */
 
 import * as THREE from 'three';
@@ -64,7 +64,7 @@ const selected = () => shapes.find((s) => s.id === selectedId) || null;
 
 /** Height of a shape's centre above the build plate. Every primitive is
  *  authored to be exactly `size` tall, so this is the same formula for all
- *  four — which is also why stacking works without the child measuring. */
+ *  four — which is also why stacking works without the kid measuring. */
 const centreY = (s) => s.size / 2 + s.level * GRID;
 
 /* --------------------------------------------------------------- geometry */
@@ -112,7 +112,7 @@ const controls = new OrbitControls(camera, canvas);
 controls.target.set(0, 15, 0);
 controls.enableDamping = true;
 controls.dampingFactor = 0.12;
-controls.enablePan = false;          // panning is how a child loses the model
+controls.enablePan = false;          // panning is how a kid loses the model
 controls.minDistance = 70;
 controls.maxDistance = 420;
 controls.maxPolarAngle = Math.PI / 2 - 0.05;   // never go under the floor
@@ -447,7 +447,7 @@ function exportTriangles() {
     const weld = weldFor(s);
     const f = (s.size + weld) / s.size;
     // Grown about its own centre, then lifted by half the growth so the
-    // bottom face stays exactly where the child put it, on the plate.
+    // bottom face stays exactly where the kid put it, on the plate.
     pos.set(s.gx * GRID, centreY(s) + weld / 2, s.gz * GRID);
     scl.setScalar(f);
     m.compose(pos, q, scl);

@@ -1,11 +1,11 @@
 # Shape Maker
 
-A 3D modelling toy for a seven-year-old, live at
+A 3D modelling toy for kids, live at
 **https://cad.ichabod-crane.net**. Tap a shape, drag it, stack it, press Save,
 and print the STL that falls out.
 
-Built for Zach's son, who can drive a tablet but cannot yet type a dimension
-into a box.
+Built for someone who cannot yet type a dimension into a box, and should not
+have to in order to print something they made.
 
 ## What it does
 
@@ -19,7 +19,7 @@ the plate.
 
 No booleans, no sketching, no extrude, no rotation, no colours, no saved
 projects, no accounts. It is a toy, not a CAD program: a lopsided snowman a
-child can actually print beats a correct modeller he cannot drive.
+kid can actually print beats a correct modeller they cannot drive.
 
 ## The five constraints that shaped it
 
@@ -29,7 +29,7 @@ child can actually print beats a correct modeller he cannot drive.
 2. **One screen.** Palette, scene, save. No modes, no menus, nothing scrolls.
 3. **Undo always works.** It is a full state snapshot per edit, not an
    inverse-operation stack — snapshots cost nothing at this scale and cannot
-   drift out of sync with the scene. A child who cannot undo stops playing.
+   drift out of sync with the scene. A kid who cannot undo stops playing.
 4. **Snap to a visible grid.** Blocks that nearly touch print as two loose
    blocks, so nothing is allowed to nearly touch.
 5. **Survives a wrong click.** No dialogs. Refresh clears everything.
