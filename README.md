@@ -15,6 +15,12 @@ lift them up a level at a time to stack, delete them, and undo any of it. Orbit
 the camera by dragging empty space. Save writes a binary STL of everything on
 the plate.
 
+Press **Mirror** and shapes come in twos: the one you place and its twin across
+the plate's centre line, moving, growing, rising and going away together. The
+things a kid actually reaches for are symmetric — a face, a robot with two
+arms, a car with two wheels — and building one of those a side at a time means
+placing every piece twice and getting the second one slightly wrong.
+
 ## What it deliberately does not do
 
 No booleans, no sketching, no extrude, no rotation, no colours, no saved
@@ -34,7 +40,7 @@ kid can actually print beats a correct modeller they cannot drive.
    blocks, so nothing is allowed to nearly touch.
 5. **Survives a wrong click.** No dialogs. Refresh clears everything.
 
-## Two decisions worth knowing about
+## Three decisions worth knowing about
 
 **Placement tests footprints, not cells.** A shape is 30mm across on a 10mm
 grid, so it covers three cells each way and the cell next door is still inside
@@ -51,6 +57,22 @@ into a real overlap, so the union is watertight. The per-shape jitter is stepped
 by the golden ratio so two identical shapes dropped in one cell can never be
 inflated to identical triangles. A fifth of a millimetre is well under one
 0.4mm nozzle width; nobody will see it, the slicer will.
+
+**A mirrored twin is a real shape, not a derived one.** The tempting design is
+to keep one shape and reflect it at render and export time. It is also the one
+that breaks undo: the snapshot holds shapes, so a reflection computed outside
+the snapshot is free to survive a delete or come back in the wrong place. So
+the twin is an ordinary entry in `shapes` with a `twin` field holding its
+partner's id, and the pairing is symmetric — neither one is the original.
+A snapshot therefore already contains both the pair and the fact that they are
+a pair, and undo carries the whole feature without knowing it exists. Every
+edit path grew one line and nothing else changed.
+
+The one new rule this needs: a pair cannot rest on the centre line, because
+there the twin would be exactly inside its partner — one shape to look at, two
+to export. Placement skips the centre column, and dragging a pair through the
+middle slides it out the other side. That is why Mirror is one button and not
+a button plus an axis picker plus an offset.
 
 ## Stack
 
@@ -109,12 +131,38 @@ docker run --rm --ipc=host \
   node /tools/verify.js https://cad.ichabod-crane.net/
 ```
 
+`tools/verify-mirror.js` does the same for the Mirror toggle: turns it on,
+places a pair, and asserts the twin tracks its partner through a pointer drag,
+Bigger, Smaller, Up, Down, delete and undo; that a pair slides past the centre
+line rather than onto it; that a mirrored scene exports an STL passing every
+check above and comes out symmetric about x = 0; that turning the toggle off
+cuts the pairs loose without deleting anything, and that undo restores the
+toggle along with the shapes. It finishes on a freshly reloaded page building a
+single shape the old way, to show the default path is untouched.
+
+```
+docker run --rm --ipc=host \
+  -v /srv/ichabod/apps/cad/tools:/tools:ro \
+  -v /srv/ichabod/apps/cad/proof:/proof \
+  -v /srv/ichabod/apps/cad/.verify/node_modules:/w/node_modules:ro \
+  -e NODE_PATH=/w/node_modules \
+  mcr.microsoft.com/playwright:v1.55.0-noble \
+  node /tools/verify-mirror.js https://cad.ichabod-crane.net/
+```
+
 There is no browser on the host, and that image ships browsers but not the npm
 package — hence `playwright-core@1.55.0` installed into `.verify/` and mounted,
 and `NODE_PATH` set, because Node resolves modules from the script's directory
 rather than the working directory.
 
-Last run: **60 checks passed, 0 failed.**
+One trap, paid for twice: do not aim a verifier's drag at a shape by screen
+offset when the plate is busy. A new shape can land in a far corner, behind
+something else from where the camera sits, and the press grabs whatever is in
+front of it — so the shape under test never moves and the failure reads like a
+bug in the app. Aim at a named cell with `screenOfCell`, on a plate you control.
+
+Last run: **verify.js 60 passed / 0 failed, verify-mirror.js 68 passed / 0
+failed, copy-check.js 50 passed / 0 failed.**
 
 ## Deploying
 

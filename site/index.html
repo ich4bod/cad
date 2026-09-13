@@ -82,6 +82,16 @@
       </button>
     </div>
 
+    <!-- Mirror is a toggle, so it is the one button on the page that stays
+         pressed. aria-pressed carries that state and the CSS reads the same
+         attribute, so there is one source of truth for "is it on". -->
+    <div id="symmetry" role="group" aria-label="Mirror new shapes">
+      <button id="btn-mirror" class="tool tool-mirror" type="button" aria-pressed="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5v19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-dasharray="2.4 3.1"/><path d="M9.2 5.5 3.5 12l5.7 6.5Z" fill="currentColor"/><path d="M14.8 5.5 20.5 12l-5.7 6.5Z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg>
+        <span>Mirror</span>
+      </button>
+    </div>
+
     <div id="edit" role="group" aria-label="Change the chosen shape">
       <button id="btn-bigger" class="tool" type="button" disabled>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>

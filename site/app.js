@@ -37,16 +37,37 @@ const KINDS = {
   cone: { colour: 0xffd43b, label: 'cone' },
 };
 
-/** shapes: [{ id, kind, size, gx, gz, level }] — the entire document. */
+/*
+  Mirror.
+
+  Symmetric is what a kid actually reaches for — a face, a robot with two arms,
+  a car with two wheels — and building it a shape at a time means placing every
+  piece twice and getting the second one wrong. With Mirror on, every shape is
+  a pair: add one and its twin appears across the plate's centre line, and from
+  then on moving, resizing, lifting or deleting either one does the same to the
+  other.
+
+  The twin is a real shape in `shapes`, not a derived thing computed at render
+  or export time. That is the whole trick. `twin` holds the partner's id and is
+  symmetric — neither one is the original — so a snapshot of `shapes` already
+  contains both the pair and the fact that they are a pair, and Undo keeps
+  working exactly as it did with no idea any of this exists. The alternative,
+  recomputing twins from a rule, is how a twin survives a delete or comes back
+  in the wrong place after an undo.
+*/
+
+/** shapes: [{ id, kind, size, gx, gz, level, twin }] — the entire document.
+ *  `twin` is the id of this shape's mirrored partner, or null. */
 let shapes = [];
 let nextId = 1;
 let selectedId = null;
+let mirror = false;
 
 const undoStack = [];
 const UNDO_LIMIT = 80;
 
 function snapshot() {
-  return { shapes: shapes.map((s) => ({ ...s })), selectedId, nextId };
+  return { shapes: shapes.map((s) => ({ ...s })), selectedId, nextId, mirror };
 }
 
 function pushUndo() {
@@ -58,9 +79,13 @@ function restore(state) {
   shapes = state.shapes.map((s) => ({ ...s }));
   selectedId = state.selectedId;
   nextId = state.nextId;
+  mirror = state.mirror;
 }
 
 const selected = () => shapes.find((s) => s.id === selectedId) || null;
+
+/** The partner of a shape, if it has one. */
+const twinOf = (s) => (s && s.twin != null ? shapes.find((x) => x.id === s.twin) || null : null);
 
 /** Height of a shape's centre above the build plate. Every primitive is
  *  authored to be exactly `size` tall, so this is the same formula for all
@@ -201,7 +226,10 @@ function syncScene() {
       mesh.children[0].geometry = mesh.geometry;
     }
     placeMesh(mesh, s);
-    mesh.children[0].visible = s.id === selectedId;
+    // A mirrored twin lights up with the shape you picked, because the next
+    // thing you do is going to happen to both of them.
+    mesh.children[0].visible =
+      s.id === selectedId || (s.twin != null && s.twin === selectedId);
   }
 }
 
@@ -238,28 +266,50 @@ const overlaps = (a, b, gap) =>
 
   So the test is the footprint, not the cell: spiral out until the new shape's
   square clears every square already down, with a millimetre to spare.
+
+  With Mirror on the same spiral runs, with two extra demands: the cell's
+  reflection has to be clear too, and the pair must not land on top of each
+  other. That second one is what keeps the first mirrored shape off the centre
+  line — a pair placed at gx=0 would be one shape wearing another.
 */
-function freeCell() {
+function freeCell(paired) {
   const placed = shapes.map((s) => footprint(s.size, s.gx, s.gz));
+  const clear = (gx, gz) => !placed.some((p) => overlaps(footprint(SIZE_DEFAULT, gx, gz), p, 1));
+  const pairFits = (gx, gz) =>
+    gx !== 0 && clear(-gx, gz) &&
+    !overlaps(footprint(SIZE_DEFAULT, gx, gz), footprint(SIZE_DEFAULT, -gx, gz), 1);
+
   for (const c of cells()) {
-    const f = footprint(SIZE_DEFAULT, c.gx, c.gz);
-    if (!placed.some((p) => overlaps(f, p, 1))) return c;
+    if (!clear(c.gx, c.gz)) continue;
+    if (paired && !pairFits(c.gx, c.gz)) continue;
+    return c;
   }
   // Board carpeted. Fall back to a cell nothing is centred on, then give up
-  // and stack at the origin — both better than refusing to add the shape.
+  // and stack near the middle — both better than refusing to add the shape.
+  const taken = (gx, gz) => shapes.some((s) => s.gx === gx && s.gz === gz);
   for (const c of cells()) {
-    if (!shapes.some((s) => s.gx === c.gx && s.gz === c.gz)) return c;
+    if (taken(c.gx, c.gz)) continue;
+    if (paired && (c.gx === 0 || taken(-c.gx, c.gz))) continue;
+    return c;
   }
-  return { gx: 0, gz: 0 };
+  return paired ? { gx: 2, gz: 0 } : { gx: 0, gz: 0 };
 }
 
 function addShape(kind) {
   pushUndo();
-  const { gx, gz } = freeCell();
-  const s = { id: nextId++, kind, size: SIZE_DEFAULT, gx, gz, level: 0 };
+  const { gx, gz } = freeCell(mirror);
+  const s = { id: nextId++, kind, size: SIZE_DEFAULT, gx, gz, level: 0, twin: null };
   shapes.push(s);
   selectedId = s.id;
-  after(`A ${KINDS[kind].label}! Drag it to move it.`);
+
+  if (mirror) {
+    const t = { ...s, id: nextId++, gx: -gx, twin: s.id };
+    s.twin = t.id;
+    shapes.push(t);
+  }
+
+  after(mirror ? `Two ${KINDS[kind].label}s! Drag one and both move.`
+               : `A ${KINDS[kind].label}! Drag it to move it.`);
 }
 
 function resize(delta) {
@@ -269,6 +319,8 @@ function resize(delta) {
   if (size === s.size) return;
   pushUndo();
   s.size = size;
+  const t = twinOf(s);
+  if (t) t.size = size;
   after(delta > 0 ? 'Bigger!' : 'Smaller!');
 }
 
@@ -279,6 +331,8 @@ function lift(delta) {
   if (level === s.level) return;
   pushUndo();
   s.level = level;
+  const t = twinOf(s);
+  if (t) t.level = level;
   after(delta > 0 ? 'Up it goes.' : 'Back down.');
 }
 
@@ -286,9 +340,30 @@ function removeSelected() {
   const s = selected();
   if (!s) return;
   pushUndo();
-  shapes = shapes.filter((x) => x.id !== s.id);
+  const t = twinOf(s);
+  const going = t ? new Set([s.id, t.id]) : new Set([s.id]);
+  shapes = shapes.filter((x) => !going.has(x.id));
   selectedId = null;
-  after('Gone. Undo brings it back.');
+  after(t ? 'Both gone. Undo brings them back.' : 'Gone. Undo brings it back.');
+}
+
+/*
+  The toggle, and the only control this feature adds.
+
+  Turning it on does not reach back and twin what is already on the plate —
+  you turn Mirror on to put two eyes on a head you have already built, and
+  duplicating the head would be a rude surprise. Turning it off cuts every
+  existing pair loose rather than deleting anything: both shapes stay exactly
+  where they are and go back to moving on their own.
+
+  Both directions are one snapshot, so both undo.
+*/
+function toggleMirror() {
+  pushUndo();
+  mirror = !mirror;
+  if (!mirror) for (const s of shapes) s.twin = null;
+  after(mirror ? 'Mirror on. New shapes come in twos.'
+               : 'Mirror off. Every shape is on its own now.');
 }
 
 function undo() {
@@ -374,8 +449,16 @@ window.addEventListener('pointermove', (e) => {
   if (!raycaster.ray.intersectPlane(dragPlane, hitPoint)) return;
 
   const clamp = (v) => Math.max(-BOARD, Math.min(BOARD, v));
-  const gx = clamp(Math.round((hitPoint.x - drag.offX) / GRID));
+  let gx = clamp(Math.round((hitPoint.x - drag.offX) / GRID));
   const gz = clamp(Math.round((hitPoint.z - drag.offZ) / GRID));
+
+  // A twinned shape cannot rest on the centre line: its twin would be inside
+  // it, and the pair would look like one shape and export as two. So the
+  // centre column is skipped — drag through the middle and the pair swaps
+  // sides — which needs no second control and nothing to explain.
+  const t = twinOf(s);
+  if (t && gx === 0) gx = s.gx > 0 ? -1 : 1;
+
   if (gx === s.gx && gz === s.gz) return;
 
   // Snapshot the position it is leaving, once, the first time it actually
@@ -385,6 +468,12 @@ window.addEventListener('pointermove', (e) => {
   s.gx = gx;
   s.gz = gz;
   placeMesh(meshes.get(s.id), s);
+
+  if (t) {
+    t.gx = -gx;
+    t.gz = gz;
+    placeMesh(meshes.get(t.id), t);
+  }
 });
 
 window.addEventListener('pointerup', (e) => {
@@ -523,6 +612,7 @@ const els = {
   up: document.getElementById('btn-up'),
   down: document.getElementById('btn-down'),
   del: document.getElementById('btn-delete'),
+  mirror: document.getElementById('btn-mirror'),
 };
 
 function setHint(text) {
@@ -540,6 +630,10 @@ function updateUI() {
   els.up.disabled = !s || s.level >= LEVEL_MAX;
   els.down.disabled = !s || s.level <= 0;
   els.del.disabled = !s;
+  // Mirror is the one control here that has an on and an off, so it is the one
+  // control that shows its state. It is never disabled: there is no scene it
+  // is wrong to turn on or off in.
+  els.mirror.setAttribute('aria-pressed', String(mirror));
 }
 
 for (const btn of document.querySelectorAll('#palette .shape')) {
@@ -550,6 +644,7 @@ els.smaller.addEventListener('click', () => resize(-SIZE_STEP));
 els.up.addEventListener('click', () => lift(1));
 els.down.addEventListener('click', () => lift(-1));
 els.del.addEventListener('click', removeSelected);
+els.mirror.addEventListener('click', toggleMirror);
 els.undo.addEventListener('click', undo);
 els.save.addEventListener('click', download);
 
@@ -586,6 +681,7 @@ updateUI();
 window.__cad = {
   shapes: () => shapes.map((s) => ({ ...s })),
   selectedId: () => selectedId,
+  mirror: () => mirror,
   undoDepth: () => undoStack.length,
   /** Where a shape's centre lands on screen, so the verifier can drag it with
    *  a real pointer instead of poking at the model behind the UI's back. */

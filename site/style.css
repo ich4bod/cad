@@ -109,12 +109,12 @@ html, body {
   border-top: 1px solid var(--edge);
 }
 
-#palette, #edit {
+#palette, #symmetry, #edit {
   display: flex;
   gap: 10px;
 }
 
-#edit {
+#symmetry, #edit {
   padding-left: 18px;
   border-left: 2px dashed var(--edge);
 }
@@ -165,7 +165,19 @@ button:disabled {
 
 /* The chosen shape's palette button is not a mode — nothing stays pressed.
    Only the "which shape is selected in the scene" state is shown, and it is
-   shown in the scene itself with an outline, where a kid is already looking. */
+   shown in the scene itself with an outline, where a kid is already looking.
+
+   Mirror is the exception, and it earns it by being the one thing on the page
+   that is genuinely on or off. Off, it looks like any other tool. On, it is
+   filled in hard enough to read across a room, because "why did two of those
+   appear" has to be answerable by looking at the button. */
+
+.tool-mirror[aria-pressed="true"] {
+  color: #ffffff;
+  border-color: #6741d9;
+  background: #7950f2;
+  box-shadow: inset 0 2px 0 rgba(0, 0, 0, .16), 0 2px 0 rgba(29, 36, 51, .13);
+}
 
 /* ---------- back-link ---------- */
 
@@ -198,7 +210,10 @@ button:disabled {
   #brand { display: none; }
   #hint { font-size: 14px; }
   #bottombar { gap: 8px 12px; padding: 10px; justify-content: center; }
-  #edit { padding-left: 12px; }
+  /* Once the bar wraps, the dashed rules separate nothing — each group is
+     already its own row — and a dash hanging off the end of a line just looks
+     like something broke. The rows do the grouping down here. */
+  #symmetry, #edit { padding-left: 0; border-left: none; }
   button { min-width: 62px; min-height: 62px; padding: 5px 7px; }
   .shape { min-width: 68px; min-height: 68px; }
   button span { font-size: 11px; }
