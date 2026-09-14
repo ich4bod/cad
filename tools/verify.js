@@ -252,9 +252,13 @@ function assertSTL(bytes, expected, label) {
   // mesh, so this is the case the weld exists for.
   console.log('');
   console.log('CRITERION 4 (again) — a stacked snowman, the touching-shapes case');
+  // Autosave means a reload brings the last document back, so an empty plate
+  // for the next scene has to be asked for rather than assumed. That the save
+  // survives a reload is verify-autosave.js's job, not this file's.
+  await page.evaluate(() => window.localStorage.removeItem(window.__cad.storageKey()));
   await page.reload({ waitUntil: 'load' });
   await page.waitForFunction(() => window.__cad && window.__cad.ready);
-  check('a refresh clears the scene', (await shapes(page)).length === 0, 'empty after reload');
+  check('clearing the save gives an empty plate', (await shapes(page)).length === 0, 'empty after reload');
 
   for (let i = 0; i < 3; i++) await addShape(page, 'ball');
   s = await shapes(page);

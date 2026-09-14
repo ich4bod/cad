@@ -21,10 +21,17 @@ things a kid actually reaches for are symmetric — a face, a robot with two
 arms, a car with two wheels — and building one of those a side at a time means
 placing every piece twice and getting the second one slightly wrong.
 
+Your model is still there when you come back. There is no Save-your-project
+button and no file to find: the plate is written to `localStorage` after every
+edit and read back on load, so closing the tab, refreshing, or the tablet
+rebooting costs you nothing. A seven-year-old does not know a browser tab is
+the only thing holding their snowman.
+
 ## What it deliberately does not do
 
-No booleans, no sketching, no extrude, no rotation, no colours, no saved
-projects, no accounts. It is a toy, not a CAD program: a lopsided snowman a
+No booleans, no sketching, no extrude, no rotation, no colours, no accounts,
+and no project files — there is exactly one model and it is always the one you
+were last working on. It is a toy, not a CAD program: a lopsided snowman a
 kid can actually print beats a correct modeller they cannot drive.
 
 ## The five constraints that shaped it
@@ -38,7 +45,9 @@ kid can actually print beats a correct modeller they cannot drive.
    drift out of sync with the scene. A kid who cannot undo stops playing.
 4. **Snap to a visible grid.** Blocks that nearly touch print as two loose
    blocks, so nothing is allowed to nearly touch.
-5. **Survives a wrong click.** No dialogs. Refresh clears everything.
+5. **Survives a wrong click, and a closed tab.** No dialogs, nothing to
+   confirm, and nothing lost to a refresh — the document autosaves and comes
+   back. Undo covers the wrong click; autosave covers everything else.
 
 ## Three decisions worth knowing about
 
@@ -102,7 +111,7 @@ between a large preview card and a one-line grey link.
 
 ## Verifying it
 
-Two tools, both run against the **live** site rather than the source.
+Four tools, all run against the **live** site rather than the source.
 
 `tools/stl-check.js` parses a binary STL as a stranger would and asserts the
 things a slicer cares about: triangle count agrees with the geometry, every
@@ -149,6 +158,38 @@ docker run --rm --ipc=host \
   mcr.microsoft.com/playwright:v1.55.0-noble \
   node /tools/verify-mirror.js https://cad.ichabod-crane.net/
 ```
+
+`tools/verify-autosave.js` proves the document survives the tab. It builds a
+scene with every field off its default — all four kinds, one resized, one
+lifted, one moved by a real pointer drag, Mirror on with a live pair — then
+closes the tab, opens a new one in the same browser, and asserts the model
+comes back identical id by id, twins included, with the Mirror button pressed
+and the right shape still chosen. It then checks the restore is not inert: a
+new shape gets ids that do not collide with the restored ones, and a restored
+pair still resizes as a pair.
+
+The other half of it is the ways autosave could make things worse rather than
+better. A browser that has never seen the site still gets the empty plate and
+the starting hint. And a saved document that has gone bad — unparseable, a
+future schema version, unknown shape kinds, sizes and coordinates far outside
+the legal range — is discarded or repaired rather than rendered, because
+nobody should be able to brick a kid's toy by poking at `localStorage`, and a
+schema change here later must degrade to an empty plate and not a blank page.
+
+```
+docker run --rm --ipc=host \
+  -v /srv/ichabod/apps/cad/tools:/tools:ro \
+  -v /srv/ichabod/apps/cad/proof:/proof \
+  -v /srv/ichabod/apps/cad/.verify/node_modules:/w/node_modules:ro \
+  -e NODE_PATH=/w/node_modules \
+  mcr.microsoft.com/playwright:v1.55.0-noble \
+  node /tools/verify-autosave.js https://cad.ichabod-crane.net/
+```
+
+One consequence worth knowing when you read the older two: a reload no longer
+clears the plate, so both of them now clear `localStorage` explicitly where
+they want a clean one. If you write a new check that assumes a fresh page is an
+empty page, it will fail, and it will be the check that is wrong.
 
 There is no browser on the host, and that image ships browsers but not the npm
 package — hence `playwright-core@1.55.0` installed into `.verify/` and mounted,

@@ -82,6 +82,116 @@ function restore(state) {
   mirror = state.mirror;
 }
 
+/* ---------------------------------------------------------------- storage */
+
+/*
+  Autosave.
+
+  A seven-year-old does not know a browser tab is the only thing holding their
+  snowman. They close it, or the tablet reboots, or someone else wants YouTube,
+  and an afternoon's work is gone with no warning and nothing to undo.
+
+  What makes this cheap is that `snapshot()` already exists for Undo, and it is
+  already a plain JSON-safe object — the same object, once per edit, into
+  localStorage. There is no save button and no file: the document is simply
+  always there when you come back, which is the only model a kid can hold.
+
+  Two things this deliberately does not persist. The undo stack stays in
+  memory, because "undo the thing I did yesterday" is not a thing anyone wants
+  and an unbounded history in a 5MB quota eventually bites. And the camera
+  stays put, because the default view is the one that shows the whole plate.
+*/
+
+const STORE_KEY = 'shape-maker/doc/v1';
+
+/** localStorage is absent in some embedded webviews and throws outright in
+ *  Safari's private mode. Probe once; if it is not there the app runs exactly
+ *  as it did before, minus the saving. */
+const store = (() => {
+  try {
+    const ls = window.localStorage;
+    const probe = `${STORE_KEY}/probe`;
+    ls.setItem(probe, '1');
+    ls.removeItem(probe);
+    return ls;
+  } catch (e) {
+    return null;
+  }
+})();
+
+function save() {
+  if (!store) return;
+  try {
+    store.setItem(STORE_KEY, JSON.stringify({ v: 1, ...snapshot() }));
+  } catch (e) {
+    // A full quota must never break the thing you are drawing in. Losing the
+    // save is bad; losing the shape on screen because the save failed is worse.
+  }
+}
+
+const int = (v) => (Number.isFinite(v) ? Math.round(v) : null);
+const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+
+/*
+  Anything on the way in is untrusted — a stale schema from a version of this
+  app that has since changed, or somebody's devtools. So the loader rebuilds
+  every shape field by field from the same constants the editor enforces,
+  rather than trusting what it reads. A shape that cannot be rebuilt is
+  dropped; a document that cannot be parsed is ignored and the kid gets the
+  empty plate they would have got anyway.
+*/
+function load() {
+  if (!store) return null;
+
+  let raw;
+  try { raw = store.getItem(STORE_KEY); } catch (e) { return null; }
+  if (!raw) return null;
+
+  let doc;
+  try { doc = JSON.parse(raw); } catch (e) { return null; }
+  if (!doc || doc.v !== 1 || !Array.isArray(doc.shapes)) return null;
+
+  const seen = new Set();
+  const clean = [];
+  for (const s of doc.shapes) {
+    if (!s || !KINDS[s.kind]) continue;
+    const id = int(s.id);
+    const size = int(s.size);
+    const gx = int(s.gx);
+    const gz = int(s.gz);
+    const level = int(s.level);
+    if (id === null || id < 1 || seen.has(id)) continue;
+    if (size === null || gx === null || gz === null || level === null) continue;
+    seen.add(id);
+    clean.push({
+      id,
+      kind: s.kind,
+      size: clamp(Math.round(size / SIZE_STEP) * SIZE_STEP, SIZE_MIN, SIZE_MAX),
+      gx: clamp(gx, -BOARD, BOARD),
+      gz: clamp(gz, -BOARD, BOARD),
+      level: clamp(level, 0, LEVEL_MAX),
+      twin: int(s.twin),
+    });
+  }
+
+  // A twin pointing at a shape that did not survive would light up a halo on
+  // nothing and move a shape that is not there, so those links are cut.
+  for (const s of clean) {
+    if (s.twin === null || !seen.has(s.twin) || s.twin === s.id) s.twin = null;
+  }
+
+  const maxId = clean.reduce((n, s) => Math.max(n, s.id), 0);
+  const wantId = int(doc.nextId);
+  return {
+    shapes: clean,
+    // nextId has to clear every id in the document even if the stored value
+    // did not, or the next shape added collides with one already on the plate.
+    nextId: Math.max(maxId + 1, wantId === null ? 1 : wantId),
+    selectedId: seen.has(int(doc.selectedId)) ? int(doc.selectedId) : null,
+    mirror: doc.mirror === true,
+  };
+}
+
 const selected = () => shapes.find((s) => s.id === selectedId) || null;
 
 /** The partner of a shape, if it has one. */
@@ -372,10 +482,14 @@ function undo() {
   after('Undone.');
 }
 
-/** Every edit ends here: redraw, re-enable the right buttons, say something. */
+/** Every edit ends here: redraw, re-enable the right buttons, say something.
+ *  Which makes it the one place that has to write the document down — every
+ *  path that changes state already comes through here. The exception is a
+ *  drag, which moves a shape a frame at a time and saves once on pointerup. */
 function after(message) {
   syncScene();
   updateUI();
+  save();
   if (message) setHint(message);
 }
 
@@ -423,6 +537,7 @@ stage.addEventListener('pointerdown', (e) => {
   selectedId = s.id;
   syncScene();
   updateUI();
+  save();
 
   dragPlane.constant = -centreY(s);
   raycaster.ray.intersectPlane(dragPlane, hitPoint);
@@ -448,9 +563,8 @@ window.addEventListener('pointermove', (e) => {
   raycaster.setFromCamera(pointer, camera);
   if (!raycaster.ray.intersectPlane(dragPlane, hitPoint)) return;
 
-  const clamp = (v) => Math.max(-BOARD, Math.min(BOARD, v));
-  let gx = clamp(Math.round((hitPoint.x - drag.offX) / GRID));
-  const gz = clamp(Math.round((hitPoint.z - drag.offZ) / GRID));
+  let gx = clamp(Math.round((hitPoint.x - drag.offX) / GRID), -BOARD, BOARD);
+  const gz = clamp(Math.round((hitPoint.z - drag.offZ) / GRID), -BOARD, BOARD);
 
   // A twinned shape cannot rest on the centre line: its twin would be inside
   // it, and the pair would look like one shape and export as two. So the
@@ -481,6 +595,7 @@ window.addEventListener('pointerup', (e) => {
     drag = null;
     canvas.classList.remove('is-dragging');
     updateUI();
+    save();
   } else if (downAt && !downAt.onShape) {
     // A tap on empty space with no orbiting means "never mind" — let go of
     // the selection. A drag of the camera leaves the selection alone.
@@ -494,6 +609,9 @@ window.addEventListener('pointerup', (e) => {
 });
 
 window.addEventListener('pointercancel', () => {
+  // A cancelled drag keeps wherever the shape got to, so that still needs
+  // writing down — a phone call mid-drag is not a reason to lose the move.
+  if (drag) save();
   drag = null;
   downAt = null;
   canvas.classList.remove('is-dragging');
@@ -673,7 +791,23 @@ renderer.setAnimationLoop(() => {
   renderer.render(scene, camera);
 });
 
-setHint('');
+/*
+  Pick up where we left off.
+
+  This runs through the same `restore()` Undo uses and then the same
+  `syncScene()` every edit uses, so a restored document goes down exactly one
+  path to pixels — there is no second loader that can disagree with the first.
+  Nothing is saved back here: an untouched restore should leave the stored copy
+  byte-identical, and a failed parse should not overwrite whatever is in there.
+*/
+const saved = load();
+if (saved && saved.shapes.length) {
+  restore(saved);
+  syncScene();
+  setHint('Here it is, just how you left it.');
+} else {
+  setHint('');
+}
 updateUI();
 
 /* ------------------------------------------------- hook for the verifier */
@@ -708,6 +842,13 @@ window.__cad = {
     };
   },
   cameraPos: () => ({ x: camera.position.x, y: camera.position.y, z: camera.position.z }),
+  /** The autosave, as the verifier sees it: where it lives, and what is in it
+   *  right now without going through the app's own parser. */
+  storageKey: () => STORE_KEY,
+  stored: () => {
+    try { return JSON.parse(window.localStorage.getItem(STORE_KEY)); }
+    catch (e) { return null; }
+  },
   stl: () => Array.from(buildSTL()),
   /** What the STL's triangle count must equal, read off the live geometry. */
   expectedTriangles: () =>

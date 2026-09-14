@@ -338,12 +338,19 @@ function assertSTL(bytes, expected, label) {
   // whatever is in front. That is a fact about the camera, not about Mirror,
   // so this runs on a fresh page where the shape under test is the only thing
   // there — which is also the honest way to check "unchanged from today".
+  //
+  // Getting that empty plate used to be one reload. Since autosave landed a
+  // reload deliberately brings the document back — that is the point of it,
+  // and verify-autosave.js is what proves it — so a clean plate now has to be
+  // asked for, by clearing the store first. What this section is actually
+  // about is unchanged: one shape, on its own, behaving the way it shipped.
   console.log('');
   console.log('NO REGRESSION — default behaviour on a clean plate');
 
+  await page.evaluate(() => window.localStorage.removeItem(window.__cad.storageKey()));
   await page.reload({ waitUntil: 'load' });
   await page.waitForFunction(() => window.__cad && window.__cad.ready);
-  check('a refresh clears the scene and the toggle',
+  check('clearing the save gives a clean plate and the toggle off',
     (await shapes(page)).length === 0 && (await mirrorOn(page)) === false,
     'empty, mirror off');
 
