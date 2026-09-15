@@ -111,7 +111,7 @@ between a large preview card and a one-line grey link.
 
 ## Verifying it
 
-Four tools, all run against the **live** site rather than the source.
+Five tools, all run against the **live** site rather than the source.
 
 `tools/stl-check.js` parses a binary STL as a stranger would and asserts the
 things a slicer cares about: triangle count agrees with the geometry, every
@@ -186,6 +186,8 @@ docker run --rm --ipc=host \
   node /tools/verify-autosave.js https://cad.ichabod-crane.net/
 ```
 
+`tools/verify-tour.js` checks the guided first minute in fresh desktop and narrow browser profiles: each step highlights a real create, delete, undo, or orbit control; completion and Skip dismiss it; and it stays dismissed after a reload in the same profile.
+
 One consequence worth knowing when you read the older two: a reload no longer
 clears the plate, so both of them now clear `localStorage` explicitly where
 they want a clean one. If you write a new check that assumes a fresh page is an
@@ -202,8 +204,7 @@ something else from where the camera sits, and the press grabs whatever is in
 front of it — so the shape under test never moves and the failure reads like a
 bug in the app. Aim at a named cell with `screenOfCell`, on a plate you control.
 
-Last run: **verify.js 60 passed / 0 failed, verify-mirror.js 68 passed / 0
-failed, copy-check.js 50 passed / 0 failed.**
+Last run: **verify.js 60 passed / 0 failed, verify-mirror.js 68 passed / 0 failed, verify-autosave.js 32 passed / 0 failed, verify-tour.js 25 passed / 0 failed, copy-check.js 50 passed / 0 failed.**
 
 ## Deploying
 

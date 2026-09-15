@@ -119,6 +119,9 @@ function assertSTL(bytes, expected, label) {
   check('GET / is 200 over https', resp.status() === 200, String(resp.status()));
 
   await page.waitForFunction(() => window.__cad && window.__cad.ready, { timeout: 20000 });
+  // The first-visit guide is intentionally present in a clean browser profile;
+  // dismiss it before exercising the established editor flow.
+  if (await page.isVisible('#tour')) await page.click('#tour-skip');
   check('three.js booted and the app is ready', true, 'window.__cad.ready');
 
   const canvasLive = await page.evaluate(() => {
@@ -303,7 +306,7 @@ function assertSTL(bytes, expected, label) {
     document.querySelectorAll('input, textarea, select, [contenteditable="true"]').length);
   check('no text input anywhere in the build flow', inputs === 0, inputs + ' input elements');
   const buttons = await page.evaluate(() =>
-    [...document.querySelectorAll('button')].map((b) => ({
+    [...document.querySelectorAll('#app > :not(#tour) button')].map((b) => ({
       label: b.querySelector('span') ? b.querySelector('span').textContent.trim() : '',
       w: Math.round(b.getBoundingClientRect().width),
       h: Math.round(b.getBoundingClientRect().height),

@@ -87,8 +87,7 @@ function restore(state) {
 /*
   Autosave.
 
-  A seven-year-old does not know a browser tab is the only thing holding their
-  snowman. They close it, or the tablet reboots, or someone else wants YouTube,
+  A kid does not know a browser tab is the only thing holding their snowman. They close it, or the tablet reboots, or someone else wants YouTube,
   and an afternoon's work is gone with no warning and nothing to undo.
 
   What makes this cheap is that `snapshot()` already exists for Undo, and it is
@@ -103,6 +102,7 @@ function restore(state) {
 */
 
 const STORE_KEY = 'shape-maker/doc/v1';
+const TOUR_KEY = 'shape-maker/tour/v1';
 
 /** localStorage is absent in some embedded webviews and throws outright in
  *  Safari's private mode. Probe once; if it is not there the app runs exactly
@@ -731,7 +731,58 @@ const els = {
   down: document.getElementById('btn-down'),
   del: document.getElementById('btn-delete'),
   mirror: document.getElementById('btn-mirror'),
+  tour: document.getElementById('tour'),
+  tourCount: document.getElementById('tour-count'),
+  tourTitle: document.getElementById('tour-title'),
+  tourCopy: document.getElementById('tour-copy'),
+  tourSkip: document.getElementById('tour-skip'),
+  tourNext: document.getElementById('tour-next'),
 };
+
+/* A first visit gets four concrete gestures, not a mode or a lesson screen.
+   Its completion lives beside the document: returning makers keep their whole
+   canvas, including an empty canvas, without being stopped by this again. */
+const tourSteps = [
+  { target: '[data-tour="create"]', title: 'Make a first shape', copy: 'Tap Block to put one on the plate.' },
+  { target: '[data-tour="delete"]', title: 'Try anything', copy: 'Choose a shape, then Delete removes it.' },
+  { target: '[data-tour="undo"]', title: 'Mistakes are fine', copy: 'Undo brings back the last thing you changed.' },
+  { target: '[data-tour="orbit"]', title: 'Look around', copy: 'Drag empty sky to spin your model. Drag a shape to move it.' },
+];
+let tourStep = 0;
+let tourTarget = null;
+
+function finishTour() {
+  if (tourTarget) delete tourTarget.dataset.tourActive;
+  tourTarget = null;
+  els.tour.hidden = true;
+  try { store?.setItem(TOUR_KEY, 'done'); } catch (e) { /* the tour is optional */ }
+}
+
+function showTourStep() {
+  if (tourTarget) delete tourTarget.dataset.tourActive;
+  const step = tourSteps[tourStep];
+  tourTarget = document.querySelector(step.target);
+  if (tourTarget) tourTarget.dataset.tourActive = 'true';
+  els.tourCount.textContent = `${tourStep + 1} of ${tourSteps.length}`;
+  els.tourTitle.textContent = step.title;
+  els.tourCopy.textContent = step.copy;
+  els.tourNext.textContent = tourStep === tourSteps.length - 1 ? 'Start making' : 'Next';
+}
+
+function startTour() {
+  if (!store) return;
+  try {
+    if (store.getItem(TOUR_KEY)) return;
+  } catch (e) { return; }
+  els.tour.hidden = false;
+  showTourStep();
+}
+
+els.tourSkip.addEventListener('click', finishTour);
+els.tourNext.addEventListener('click', () => {
+  if (tourStep === tourSteps.length - 1) finishTour();
+  else { tourStep += 1; showTourStep(); }
+});
 
 function setHint(text) {
   els.hint.textContent = text ||
@@ -809,6 +860,7 @@ if (saved && saved.shapes.length) {
   setHint('');
 }
 updateUI();
+startTour();
 
 /* ------------------------------------------------- hook for the verifier */
 
@@ -853,5 +905,6 @@ window.__cad = {
   /** What the STL's triangle count must equal, read off the live geometry. */
   expectedTriangles: () =>
     shapes.reduce((n, s) => n + triangleCount(geometryFor(s.kind, s.size)), 0),
+  tour: () => ({ visible: !els.tour.hidden, step: tourStep, target: tourSteps[tourStep]?.target }),
   ready: true,
 };

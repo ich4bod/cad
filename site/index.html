@@ -46,7 +46,7 @@
     <h1 id="brand">Shape Maker</h1>
     <p id="hint" aria-live="polite">Tap a shape below to start</p>
     <div id="topactions">
-      <button id="btn-undo" class="tool tool-undo" type="button" disabled>
+      <button id="btn-undo" class="tool tool-undo" type="button" disabled data-tour="undo">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7H15a5 5 0 0 1 0 10H8" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 3.5 8 7l4 3.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
         <span>Undo</span>
       </button>
@@ -58,13 +58,13 @@
   </header>
 
   <main id="stage">
-    <canvas id="scene"></canvas>
+    <canvas id="scene" data-tour="orbit"></canvas>
   </main>
 
   <footer id="bottombar">
 
     <div id="palette" role="group" aria-label="Add a shape">
-      <button class="shape" type="button" data-kind="cube">
+      <button class="shape" type="button" data-kind="cube" data-tour="create">
         <svg viewBox="0 0 40 40" aria-hidden="true"><path d="M20 5 34 12v16L20 35 6 28V12Z" fill="#ff6b6b"/><path d="M20 5 34 12 20 19 6 12Z" fill="#ff9a9a"/><path d="M20 19v16L6 28V12Z" fill="#d94a4a"/></svg>
         <span>Block</span>
       </button>
@@ -109,7 +109,7 @@
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v13" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><path d="M6.5 12.5 12 18l5.5-5.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
         <span>Down</span>
       </button>
-      <button id="btn-delete" class="tool tool-delete" type="button" disabled>
+      <button id="btn-delete" class="tool tool-delete" type="button" disabled data-tour="delete">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path d="M9 7V5h6v2" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M6.5 7 7.6 19h8.8L17.5 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
         <span>Delete</span>
       </button>
@@ -120,6 +120,16 @@
     </a>
 
   </footer>
+
+  <aside id="tour" aria-labelledby="tour-title" aria-live="polite" hidden>
+    <p id="tour-count"></p>
+    <h2 id="tour-title"></h2>
+    <p id="tour-copy"></p>
+    <div id="tour-actions">
+      <button id="tour-skip" type="button">Skip</button>
+      <button id="tour-next" type="button">Next</button>
+    </div>
+  </aside>
 
 </div>
 

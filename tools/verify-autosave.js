@@ -49,6 +49,10 @@ async function ready(page) {
   await sleep(250);
 }
 
+async function dismissTour(page) {
+  if (await page.isVisible('#tour')) await page.click('#tour-skip');
+}
+
 const addShape = async (page, kind) => {
   await page.click(`#palette .shape[data-kind="${kind}"]`);
   await sleep(140);
@@ -96,6 +100,7 @@ async function main() {
   let page = await ctx.newPage();
   await page.goto(BASE + '/', { waitUntil: 'networkidle' });
   await ready(page);
+  await dismissTour(page);
 
   check('starts empty in a fresh profile', (await shapes(page)).length === 0);
   check('nothing saved before the first edit', (await stored(page)) === null);
@@ -222,6 +227,7 @@ async function main() {
   const cleanPage = await clean.newPage();
   await cleanPage.goto(BASE + '/', { waitUntil: 'networkidle' });
   await ready(cleanPage);
+  await dismissTour(cleanPage);
 
   check('a fresh profile still loads empty', (await shapes(cleanPage)).length === 0);
   check('a fresh profile has Save and Undo off',
@@ -262,6 +268,7 @@ async function main() {
     );
     await bp.goto(BASE + '/', { waitUntil: 'networkidle' });
     await ready(bp);
+    await dismissTour(bp);
 
     const got = await shapes(bp);
     const ok = got.every(

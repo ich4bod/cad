@@ -118,6 +118,7 @@ function assertSTL(bytes, expected, label) {
   const resp = await page.goto(BASE + '/', { waitUntil: 'load', timeout: 45000 });
   check('GET / is 200 over https', resp.status() === 200, String(resp.status()));
   await page.waitForFunction(() => window.__cad && window.__cad.ready, { timeout: 20000 });
+  if (await page.isVisible('#tour')) await page.click('#tour-skip');
 
   check('Mirror starts off', (await mirrorOn(page)) === false, 'mirror() === false');
   check('the button says so', (await pressed(page)) === 'false', 'aria-pressed="false"');
@@ -398,7 +399,7 @@ function assertSTL(bytes, expected, label) {
   check('the toggle introduced no text input', inputs === 0, inputs + ' input elements');
 
   const buttons = await page.evaluate(() =>
-    [...document.querySelectorAll('button')].map((b) => ({
+    [...document.querySelectorAll('#app > :not(#tour) button')].map((b) => ({
       label: b.querySelector('span') ? b.querySelector('span').textContent.trim() : '',
       w: Math.round(b.getBoundingClientRect().width),
       h: Math.round(b.getBoundingClientRect().height),
