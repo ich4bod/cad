@@ -252,6 +252,8 @@ controls.minDistance = 70;
 controls.maxDistance = 420;
 controls.maxPolarAngle = Math.PI / 2 - 0.05;   // never go under the floor
 controls.update();
+const initialCamera = camera.position.clone();
+const initialTarget = controls.target.clone();
 
 scene.add(new THREE.HemisphereLight(0xffffff, 0x9fb4cc, 2.0));
 
@@ -817,10 +819,57 @@ els.mirror.addEventListener('click', toggleMirror);
 els.undo.addEventListener('click', undo);
 els.save.addEventListener('click', download);
 
-// Grown-ups get the keyboard shortcut they will reach for anyway.
+function selectShapeBy(delta) {
+  if (!shapes.length) {
+    setHint('There are no shapes to inspect yet.');
+    return;
+  }
+  const at = shapes.findIndex((s) => s.id === selectedId);
+  const index = at < 0 ? (delta > 0 ? 0 : shapes.length - 1) :
+    (at + delta + shapes.length) % shapes.length;
+  const s = shapes[index];
+  selectedId = s.id;
+  syncScene();
+  updateUI();
+  setHint(`Selected ${KINDS[s.kind].label} ${index + 1} of ${shapes.length}.`);
+}
+
+function rotateView(horizontal, vertical) {
+  const offset = camera.position.clone().sub(controls.target);
+  if (horizontal) offset.applyAxisAngle(new THREE.Vector3(0, 1, 0), horizontal);
+  if (vertical) {
+    const forward = offset.clone().normalize();
+    const right = new THREE.Vector3().crossVectors(camera.up, forward).normalize();
+    offset.applyAxisAngle(right, vertical);
+  }
+  camera.position.copy(controls.target).add(offset);
+  camera.lookAt(controls.target);
+  controls.update();
+}
+
+function resetView() {
+  camera.position.copy(initialCamera);
+  controls.target.copy(initialTarget);
+  controls.update();
+  setHint('View reset.');
+}
+
+// The canvas offers inspection without taking keyboard access away from the
+// ordinary buttons: brackets choose shapes, arrows turn the camera, Home resets.
 window.addEventListener('keydown', (e) => {
-  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); undo(); }
-  if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); removeSelected(); }
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); undo(); return; }
+  if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); removeSelected(); return; }
+  if (e.target !== canvas) return;
+
+  switch (e.key) {
+    case '[': e.preventDefault(); selectShapeBy(-1); break;
+    case ']': e.preventDefault(); selectShapeBy(1); break;
+    case 'ArrowLeft': e.preventDefault(); rotateView(0.16, 0); setHint('View rotated left.'); break;
+    case 'ArrowRight': e.preventDefault(); rotateView(-0.16, 0); setHint('View rotated right.'); break;
+    case 'ArrowUp': e.preventDefault(); rotateView(0, 0.10); setHint('View tilted up.'); break;
+    case 'ArrowDown': e.preventDefault(); rotateView(0, -0.10); setHint('View tilted down.'); break;
+    case 'Home': e.preventDefault(); resetView(); break;
+  }
 });
 
 /* ------------------------------------------------------------------ frame */
@@ -894,6 +943,7 @@ window.__cad = {
     };
   },
   cameraPos: () => ({ x: camera.position.x, y: camera.position.y, z: camera.position.z }),
+  cameraTarget: () => ({ x: controls.target.x, y: controls.target.y, z: controls.target.z }),
   /** The autosave, as the verifier sees it: where it lives, and what is in it
    *  right now without going through the app's own parser. */
   storageKey: () => STORE_KEY,
