@@ -21,8 +21,10 @@ const fail = (message) => { throw new Error(message); };
   const scene = page.locator('#scene');
   if (await scene.getAttribute('tabindex') !== '0') fail('scene is not keyboard focusable');
   if (await scene.getAttribute('aria-describedby') !== 'scene-keys') fail('scene has no keyboard instructions');
-  await scene.focus();
-  if (!(await scene.evaluate((el) => document.activeElement === el))) fail('scene did not receive focus');
+  await page.keyboard.press('Tab');
+  if (!(await scene.evaluate((el) => document.activeElement === el))) fail('scene did not receive keyboard focus');
+  const outline = await scene.evaluate((el) => getComputedStyle(el).outlineWidth);
+  if (outline !== '4px') fail(`focused scene has no visible focus outline (${outline})`);
 
   await page.keyboard.press(']');
   const selected = await page.evaluate(() => window.__cad.selectedId());
@@ -34,8 +36,12 @@ const fail = (message) => { throw new Error(message); };
   if (Math.hypot(reset.x - 115, reset.y - 105, reset.z - 150) > 0.01) fail('Home did not reset the view');
   if (Math.hypot(turned.x - reset.x, turned.y - reset.y, turned.z - reset.z) < 1) fail('ArrowLeft did not rotate the view');
 
-  await page.locator('[data-kind="cube"]').click();
-  await page.locator('[data-kind="ball"]').click();
+  // From the focused canvas, Tab reaches the normal button controls. Enter
+  // performs their existing actions, so no mouse is needed to make a model.
+  await page.keyboard.press('Tab');
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('Tab');
+  await page.keyboard.press('Enter');
   await scene.focus();
   await page.keyboard.press(']');
   const first = await page.evaluate(() => window.__cad.selectedId());
