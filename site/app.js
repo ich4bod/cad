@@ -739,6 +739,7 @@ const els = {
   tourCopy: document.getElementById('tour-copy'),
   tourSkip: document.getElementById('tour-skip'),
   tourNext: document.getElementById('tour-next'),
+  copy: document.getElementById('btn-copy'),
 };
 
 /* A first visit gets four concrete gestures, not a mode or a lesson screen.
@@ -796,6 +797,7 @@ function updateUI() {
   const s = selected();
   els.undo.disabled = undoStack.length === 0;
   els.save.disabled = shapes.length === 0;
+  els.copy.disabled = !s || s.twin !== null;
   els.bigger.disabled = !s || s.size >= SIZE_MAX;
   els.smaller.disabled = !s || s.size <= SIZE_MIN;
   els.up.disabled = !s || s.level >= LEVEL_MAX;
@@ -818,6 +820,58 @@ els.del.addEventListener('click', removeSelected);
 els.mirror.addEventListener('click', toggleMirror);
 els.undo.addEventListener('click', undo);
 els.save.addEventListener('click', download);
+els.copy.addEventListener('click', duplicateSelected);
+
+function duplicateSelected() {
+  const s = selected();
+  if (!s || s.twin !== null) return;
+
+  const allCells = [];
+  for (let gx = -BOARD; gx <= BOARD; gx++) {
+    for (let gz = -BOARD; gz <= BOARD; gz++) {
+      allCells.push({ gx, gz });
+    }
+  }
+
+  allCells.sort((a, b) => {
+    const distA = Math.abs(a.gx - s.gx) + Math.abs(a.gz - s.gz);
+    const distB = Math.abs(b.gx - s.gx) + Math.abs(b.gz - s.gz);
+    if (distA !== distB) return distA - distB;
+    if (a.gz !== b.gz) return a.gz - b.gz;
+    return a.gx - b.gx;
+  });
+
+  const placedRects = shapes.map((sh) => footprint(sh.size, sh.gx, sh.gz));
+  let best = null;
+
+  for (const c of allCells) {
+    const candRect = footprint(s.size, c.gx, c.gz);
+    if (!placedRects.some((p) => overlaps(candRect, p, 1))) {
+      best = c;
+      break;
+    }
+  }
+
+  if (!best) {
+    setHint('No room to copy that shape.');
+    return;
+  }
+
+  pushUndo();
+  const id = nextId++;
+  const newS = {
+    id,
+    kind: s.kind,
+    size: s.size,
+    gx: best.gx,
+    gz: best.gz,
+    level: s.level,
+    twin: null,
+  };
+  shapes.push(newS);
+  selectedId = id;
+  after('Copied! Move the new one where you want it.');
+}
 
 function selectShapeBy(delta) {
   if (!shapes.length) {
