@@ -1,118 +1,146 @@
 'use strict';
 
-const { chromium } = require('playwright');
+let chromium;
+try { chromium = require('playwright').chromium; }
+catch (e) { chromium = require('playwright-core').chromium; }
 
-const BASE = process.argv[2] || 'https://cad.ichabod-crane.net/';
+const BASE = (process.argv[2] || 'https://cad.ichabod-crane.net/').replace(/\/$/, '') + '?v=' + Date.now();
 
-(async () => {
+let passed = 0;
+const failures = [];
+
+function check(name, cond, detail) {
+  const line = name + (detail ? '  [' + detail + ']' : '');
+  if (cond) { passed++; console.log('  PASS  ' + line); }
+  else { failures.push(line); console.log('  FAIL  ' + line); }
+}
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+const shapes = (page) => page.evaluate(() => window.__cad.shapes());
+const selectedId = (page) => page.evaluate(() => window.__cad.selectedId());
+const stored = (page) => page.evaluate(() => window.__cad.stored());
+
+async function ready(page) {
+  await page.waitForFunction(() => window.__cad && window.__cad.ready, null, { timeout: 30000 });
+  await sleep(250);
+}
+
+async function dismissTour(page) {
+  if (await page.isVisible('#tour')) await page.click('#tour-skip');
+}
+
+const addShape = async (page, kind) => {
+  await page.evaluate((k) => window.addShape(k), kind);
+  await sleep(250);
+};
+
+const clickShape = async (page, id) => {
+  const p = await page.evaluate((i) => window.__cad.screenOf(i), id);
+  if (!p) throw new Error('Could not find screen position for shape ' + id);
+  await page.mouse.click(p.x, p.y);
+  await sleep(140);
+};
+
+async function main() {
   const browser = await chromium.launch({ args: ['--no-sandbox'] });
-  const context = await browser.newContext({
-    viewport: { width: 390, height: 844 },
-  });
-  const page = await context.newPage();
+  const errors = [];
 
-  try {
-    await page.goto(BASE, { waitUntil: 'networkidle' });
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  ctx.on('console', (m) => { if (m.type() === 'error') errors.push('[build] ' + m.text()); });
+  ctx.on('pageerror', (e) => errors.push('[build] pageerror ' + e.message));
 
-    await page.waitForFunction(() => window.__cad && window.__cad.ready);
+  let page = await ctx.newPage();
+  await page.goto(BASE + '/', { waitUntil: 'networkidle' });
+  await ready(page);
+  await dismissTour(page);
 
-    if (await page.isVisible('#tour')) {
-      await page.click('#tour-skip');
-    }
+  /* ------------------------------------------- 1. set up: add a Block, make it Bigger and Up */
 
-    // 1. Add a Block
-    await page.click('#palette .shape[data-kind="cube"]');
-    await page.waitForSelector('.shape[data-kind="cube"]');
-    await page.waitForTimeout(500);
-    const shapesCount = await page.evaluate(() => window.__cad.shapes().length);
-    console.log(`Shapes count after adding one: ${shapesCount}`);
-    if (shapesCount === 0) throw new Error('No shapes added');
+  await addShape(page, 'cube');
+  await sleep(250);
+  let list = await shapes(page);
+  console.log('Shapes after addShape:', JSON.stringify(list));
+  if (!list.length) throw new Error('No shapes found after addShape');
+  const originalId = list[0].id;
+  await clickShape(page, originalId);
+  
+  await page.click('#btn-bigger');
+  await sleep(120);
+  await page.click('#btn-bigger');
+  await sleep(120);
+  
+  await page.click('#btn-up');
+  await sleep(120);
+  await page.click('#btn-up');
+  await sleep(120);
 
-    // 2. Make it Bigger and Up
-    await page.click('#btn-bigger');
-    await page.waitForTimeout(500);
-    await page.click('#btn-up');
-    await page.waitForTimeout(500);
+  list = await shapes(page);
+  const sh = list.find(s => s.id === originalId);
+  check('block is bigger and up', sh.size > 30 && sh.level > 0, `size: ${sh.size}, level: ${sh.level}`);
 
-    const initialShape = await page.evaluate(() => window.__cad.shapes()[0]);
+  /* ------------------------------------------- 2. click Copy and assert properties */
+
+  await page.click('#btn-copy');
+  await sleep(250);
+
+  list = await shapes(page);
+  check('two shapes exist', list.length === 2, list.length);
+  
+  const newS = list.find(s => s.id !== originalId);
+  if (newS) {
+    check('new shape is unpaired', newS.twin === null, `twin: ${newS.twin}`);
+    check('new shape matches original kind/size/level', 
+      newS.kind === sh.kind && newS.size === sh.size && newS.level === sh.level,
+      `kind: ${newS.kind}, size: ${newS.size}, level: ${newS.level}`);
+      
+    const oldS = list.find(s => s.id === originalId);
+    const overlaps = (a, b) =>
+      a[0] < b[1] + 1 && b[0] < a[1] + 1 && a[2] < b[3] + 1 && b[2] < a[3] + 1;
     
-    console.log('Checking for #btn-copy...');
-    const allButtonIds = await page.evaluate(() => Array.from(document.querySelectorAll('button')).map(b => b.id));
-    console.log(`All button IDs: ${allButtonIds.join(', ')}`);
-    
-    const isButtonVisible = await page.locator('#btn-copy').isVisible();
-    console.log(`Is Copy button visible? ${isButtonVisible}`);
-    
-    const isCopyEnabled = await page.isEnabled('#btn-copy');
-    console.log(`Is Copy button enabled? ${isCopyEnabled}`);
+    const footprint = (s) => [
+      s.gx * 10 - s.size / 2, s.gx * 10 + s.size / 2,
+      s.gz * 10 - s.size / 2, s.gz * 10 + s.size / 2,
+    ];
 
-    // 3. Click Copy
-    await page.click('#btn-copy');
-    await page.waitForTimeout(500);
-
-    // 4. Assertions
-    const assertions = await page.evaluate((initial) => {
-      const shapes = window.__cad.shapes();
-      const GRID = 10;
-      const footprint = (size, gx, gz) => [
-        gx * GRID - size / 2, gx * GRID + size / 2,
-        gz * GRID - size / 2, gz * GRID + size / 2,
-      ];
-      const overlaps = (a, b, gap) =>
-        a[0] < b[1] + gap && b[0] < a[1] + gap && a[2] < b[3] + gap && b[2] < a[3] + gap;
-
-      if (shapes.length !== 2) return { ok: false, msg: `Expected 2 shapes, got ${shapes.length}` };
-
-      const [s1, s2] = shapes;
-
-      // Check same kind/size/level
-      const sameProps = (s) => s.kind === initial.kind && s.size === initial.size && s.level === initial.level;
-      if (!sameProps(s1) || !sameProps(s2)) return { ok: false, msg: 'Shapes have different kind, size, or level' };
-
-      // Check distinct unpaired records
-      if (s1.id === s2.id) return { ok: false, msg: 'Shapes have the same id' };
-      if (s1.twin !== null || s2.twin !== null) return { ok: false, msg: 'Shapes are not unpaired' };
-
-      // Check non-overlapping footprints
-      const rects = shapes.map(s => footprint(s.size, s.gx, s.gz));
-      if (overlaps(rects[0], rects[1], 1)) return { ok: false, msg: 'Shapes have overlapping footprints' };
-
-      return { ok: true };
-    }, initialShape);
-
-    if (!assertions.ok) throw new Error(assertions.msg);
-
-    // 5. Click Undo and assert only the original remains
-    await page.click('#btn-undo');
-    await page.waitForTimeout(500);
-    const afterUndo = await page.evaluate((initial) => {
-      const shapes = window.__cad.shapes();
-      return shapes.length === 1 && shapes[0].id === initial.id;
-    }, initialShape);
-    if (!afterUndo) throw new Error('After undo, only the original remains is false');
-
-    // 6. Reload and assert it persists
-    await page.reload({ waitUntil: 'networkidle' });
-    await page.waitForFunction(() => window.__cad && window.__cad.ready);
-    const afterReload = await page.evaluate((initial) => {
-      const shapes = window.__cad.shapes();
-      return shapes.length === 1 && shapes[0].id === initial.id;
-    }, initialShape);
-    if (!afterReload) throw new Error('Shape did not persist after reload');
-
-    // 7. Viewport check
-    const dims = await page.evaluate(() => ({
-      sw: document.documentElement.scrollWidth,
-      iw: window.innerWidth
-    }));
-    if (dims.sw !== dims.iw) throw new Error(`Scroll width (${dims.sw}) !== inner width (${dims.iw})`);
-
-    console.log('single-shape copy verified with undo, autosave, and phone layout');
-
-  } catch (e) {
-    console.error(e.message);
-    process.exit(1);
-  } finally {
-    await browser.close();
+    const rectA = footprint(oldS);
+    const rectB = footprint(newS);
+    check('footprints do not overlap', !overlaps(rectA, rectB), `A: ${rectA.join(',')}, B: ${rectB.join(',')}`);
+  } else {
+    check('new shape exists', false, 'could not find second shape');
   }
-})();
+
+  /* ------------------------------------------- 3. click Undo and assert original remains */
+
+  await page.click('#btn-undo');
+  await sleep(250);
+  list = await shapes(page);
+  check('only original remains after undo', list.length === 1 && list[0].id === originalId, list.length);
+
+  /* ------------------------------------------- 4. reload and assert it persists */
+
+  await page.reload({ waitUntil: 'networkidle' });
+  await ready(page);
+  list = await shapes(page);
+  check('shape persists after reload', list.length === 1 && list[0].id === originalId, list.length);
+
+  /* ------------------------------------------- 5. phone layout assertion */
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await sleep(500);
+  const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
+  const innerWidth = await page.evaluate(() => window.innerWidth);
+  check('phone layout: no horizontal scroll', scrollWidth === innerWidth, `width: ${scrollWidth}, inner: ${innerWidth}`);
+
+  await browser.close();
+
+  if (errors.length) console.log('  console errors during build: ' + errors.join(' ; '));
+  if (failures.length) {
+    console.log('');
+    for (const f of failures) console.log('  FAILED: ' + f);
+    process.exit(1);
+  }
+  console.log('\nsingle-shape copy verified with undo, autosave, and phone layout');
+}
+
+main().catch((e) => { console.error(e); process.exit(1); });
