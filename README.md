@@ -7,6 +7,8 @@ and print the STL that falls out.
 Built for someone who cannot yet type a dimension into a box, and should not
 have to in order to print something they made.
 
+Data: disposable; models are saved only in each visitor's browser.
+
 ## What it does
 
 Four primitives — block, ball, tube, cone — on a 10mm grid. Add them from the
