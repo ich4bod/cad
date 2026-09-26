@@ -12,8 +12,8 @@
      printable object instead of two loose blocks that fall apart.
 
   2. Undo is a full state snapshot, not an inverse-operation stack. Snapshots
-     cost nothing at this scale and they cannot drift out of sync with the
-     scene, so the Undo button always works — which is the actual requirement.
+     cost nothing at this scale and they already exist for Undo, so the
+     Undo button always works — which is the actual requirement.
      A kid who cannot undo a mistake stops playing.
 */
 
@@ -413,6 +413,7 @@ function freeCell(paired) {
     return c;
   }
   console.log('freeCell gave up');
+  console.log('DEBUG: line 417 reached');
   return paired ? { gx: 2, gz: 0 } : { gx: 0, gz: 0 };
 }
 
