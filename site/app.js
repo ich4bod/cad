@@ -419,26 +419,31 @@ function freeCell(paired) {
 
 window.addShape = addShape;
 function addShape(kind) {
-  console.log('addShape called with kind:', kind);
-  pushUndo();
-  const { gx, gz } = freeCell(mirror);
-  console.log('freeCell returned:', { gx, gz });
-  const s = { id: nextId++, kind, size: SIZE_DEFAULT, gx, gz, level: 0, twin: null };
-  console.log('new shape:', s);
-  shapes.push(s);
-  console.log('shapes length after push:', shapes.length);
-  selectedId = s.id;
-  console.log('selectedId set to:', selectedId);
+  try {
+    console.log('addShape called with kind:', kind);
+    pushUndo();
+    const { gx, gz } = freeCell(mirror);
+    console.log('freeCell returned:', { gx, gz });
+    const s = { id: nextId++, kind, size: SIZE_DEFAULT, gx, gz, level: 0, twin: null };
+    console.log('new shape:', s);
+    shapes.push(s);
+    console.log('shapes length after push:', shapes.length);
+    selectedId = s.id;
+    console.log('selectedId set to:', selectedId);
 
-  if (mirror) {
-    const t = { ...s, id: nextId++, gx: -gx, twin: s.id };
-    s.twin = t.id;
-    shapes.push(t);
-    console.log('mirror twin added:', t);
+    if (mirror) {
+      const t = { ...s, id: nextId++, gx: -gx, twin: s.id };
+      s.twin = t.id;
+      shapes.push(t);
+      console.log('mirror twin added:', t);
+    }
+
+    after(mirror ? `Two ${KINDS[kind].label}s! Drag one and both move.`
+                 : `A ${KINDS[kind].label}! Drag it to move it.`);
+  } catch (err) {
+    console.error('Caught in addShape:', err);
+    throw err;
   }
-
-  after(mirror ? `Two ${KINDS[kind].label}s! Drag one and both move.`
-               : `A ${KINDS[kind].label}! Drag it to move it.`);
 }
 
 function resize(delta) {
@@ -507,6 +512,7 @@ function undo() {
  *  drag, which moves a shape a frame at a time and saves once on pointerup. */
 function after(message) {
   console.log('Calling after:', message);
+  console.log('current mirror state:', mirror);
   syncScene();
   updateUI();
   save();

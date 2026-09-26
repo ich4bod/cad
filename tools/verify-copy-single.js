@@ -16,7 +16,7 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
   try {
     console.log('Navigating...');
-    await page.goto('https://cad.ichabod-crane.net/', { waitUntil: 'networkidle' });
+    await page.goto(process.argv[2] || 'https://cad.ichabod-crane.net/', { waitUntil: 'domcontentloaded' });
     console.log('Page loaded.');
 
     await page.waitForFunction(() => window.__cad && window.__cad.ready, null, { timeout: 5000 });
@@ -68,29 +68,11 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
     if (s1.id === s2.id) {
       throw new Error('Shapes have same ID');
     }
-    if (s1.twin === null || s2.twin === null) {
-      throw new Error('Shapes are not unpaired (twin is not null)');
-    }
-    if (s1.twin !== s2.id || s2.twin !== s1.id) {
-      // Wait, the card says "unpaired records". In my code, duplication creates a twin.
-      // But the card says "two distinct unpaired records". 
-      // Re-reading: "assert two distinct unpaired records with same kind/size/level and non-overlapping footprints"
-      // In the implementation I wrote: "the new shape is selected, and it has twin: null; the Mirror toggle does not affect copying."
-      // Wait, if I have mirror off, and I copy, I get two shapes, both with twin: null.
-      // If I have mirror on, I get a pair where they are twins of each other.
-      // The card says "unpaired records", which implies twin: null.
-      // Let's check how my duplication handles mirror.
-      // Mirror is off by default.
-    }
-    // Actually, if mirror is off:
-    // s1.twin will be null.
-    // s2.twin will be null.
-    // This matches "unpaired records".
     if (s1.twin !== null || s2.twin !== null) {
       throw new Error('Shapes should be unpaired (twin: null)');
     }
-    // Non-overlapping footprints check is harder from here, let's ask __cad
-    const isOverlapping = await page.evaluate((id1, id2) => {
+    // Non-overlapping footprints check
+    const isOverlapping = await page.evaluate(({id1, id2}) => {
       const s1 = window.__cad.shapes().find(s => s.id === id1);
       const s2 = window.__cad.shapes().find(s => s.id === id2);
       const footprint = (s) => [
@@ -101,7 +83,7 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
       const p2 = footprint(s2);
       const gap = 1;
       return p1[0] < p2[1] + gap && p2[0] < p1[1] + gap && p1[2] < p2[3] + gap && p2[2] < p1[3] + gap;
-    }, s1.id, s2.id);
+    }, {id1: s1.id, id2: s2.id});
     if (isOverlapping) {
       throw new Error('Shapes overlap');
     }
@@ -120,7 +102,7 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
     // 7. Reload and assert it persists
     console.log('Reloading...');
-    await page.reload({ waitUntil: 'networkidle' });
+    await page.reload({ waitUntil: 'domcontentloaded' });
     await page.waitForFunction(() => window.__cad && window.__cad.ready, null, { timeout: 5000 });
     console.log('Reloaded.');
     const shapesAfterReload = await page.evaluate(() => window.__cad.shapes());
