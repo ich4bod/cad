@@ -804,7 +804,7 @@ function updateUI() {
   const s = selected();
   els.undo.disabled = undoStack.length === 0;
   els.save.disabled = shapes.length === 0;
-  els.copy.disabled = !s || s.twin !== null;
+  els.copy.disabled = !s;
   els.bigger.disabled = !s || s.size >= SIZE_MAX;
   els.smaller.disabled = !s || s.size <= SIZE_MIN;
   els.up.disabled = !s || s.level >= LEVEL_MAX;
@@ -816,6 +816,7 @@ function updateUI() {
   els.mirror.setAttribute('aria-pressed', String(mirror));
 }
 window.updateUI = updateUI;
+window.duplicateSelected = duplicateSelected;
 
 for (const btn of document.querySelectorAll('#palette .shape')) {
   btn.addEventListener('click', () => addShape(btn.dataset.kind));
@@ -832,7 +833,9 @@ els.copy.addEventListener('click', duplicateSelected);
 
 function duplicateSelected() {
   const s = selected();
-  if (!s || s.twin !== null) return;
+  if (!s) return;
+  const t = twinOf(s);
+  const isPair = t !== null;
 
   const allCells = [];
   for (let gx = -BOARD; gx <= BOARD; gx++) {
@@ -852,11 +855,26 @@ function duplicateSelected() {
   const placedRects = shapes.map((sh) => footprint(sh.size, sh.gx, sh.gz));
   let best = null;
 
-  for (const c of allCells) {
-    const candRect = footprint(s.size, c.gx, c.gz);
-    if (!placedRects.some((p) => overlaps(candRect, p, 1))) {
-      best = c;
-      break;
+  if (isPair) {
+    const side = Math.sign(s.gx);
+    for (const c of allCells) {
+      if (c.gx === 0 || Math.sign(c.gx) !== side) continue;
+      const candRect = footprint(s.size, c.gx, c.gz);
+      const twinRect = footprint(s.size, -c.gx, c.gz);
+      if (!placedRects.some((p) => overlaps(candRect, p, 1) || overlaps(twinRect, p, 1))) {
+        if (!overlaps(candRect, twinRect, 1)) {
+          best = c;
+          break;
+        }
+      }
+    }
+  } else {
+    for (const c of allCells) {
+      const candRect = footprint(s.size, c.gx, c.gz);
+      if (!placedRects.some((p) => overlaps(candRect, p, 1))) {
+        best = c;
+        break;
+      }
     }
   }
 
@@ -866,19 +884,29 @@ function duplicateSelected() {
   }
 
   pushUndo();
-  const id = nextId++;
-  const newS = {
-    id,
-    kind: s.kind,
-    size: s.size,
-    gx: best.gx,
-    gz: best.gz,
-    level: s.level,
-    twin: null,
-  };
-  shapes.push(newS);
-  selectedId = id;
-  after('Copied! Move the new one where you want it.');
+  if (isPair) {
+    const id1 = nextId++;
+    const id2 = nextId++;
+    const newS1 = { ...s, id: id1, gx: best.gx, gz: best.gz, twin: id2 };
+    const newS2 = { ...s, id: id2, gx: -best.gx, gz: best.gz, twin: id1 };
+    shapes.push(newS1, newS2);
+    selectedId = id1;
+    after('Copied both! The new pair still moves together.');
+  } else {
+    const id = nextId++;
+    const newS = {
+      id,
+      kind: s.kind,
+      size: s.size,
+      gx: best.gx,
+      gz: best.gz,
+      level: s.level,
+      twin: null,
+    };
+    shapes.push(newS);
+    selectedId = id;
+    after('Copied! Move the new one where you want it.');
+  }
 }
 
 function selectShapeBy(delta) {
