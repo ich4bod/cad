@@ -45,7 +45,22 @@ const selectedId = (page) => page.evaluate(() => window.__cad.selectedId());
 const stored = (page) => page.evaluate(() => window.__cad.stored());
 
 async function ready(page) {
-  await page.waitForFunction(() => window.__cad && window.__cad.ready, null, { timeout: 30000 });
+  console.log('Calling ready(page)...');
+  try {
+    await page.waitForFunction(() => window.__cad && window.__cad.ready, null, { timeout: 30000 });
+    console.log('ready(page) success');
+  } catch (e) {
+    console.log('ready(page) failed, checking window.__cad status...');
+    const status = await page.evaluate(() => {
+      return {
+        exists: typeof window.__cad !== 'undefined',
+        type: typeof window.__cad,
+        ready: typeof window.__cad !== 'undefined' ? window.__cad.ready : 'N/A'
+      };
+    });
+    console.log('window.__cad status:', JSON.stringify(status));
+    throw e;
+  }
   await sleep(250);
 }
 
@@ -94,11 +109,11 @@ async function main() {
   // context is exactly the case the card is about: the browser is still the
   // browser, the tab is gone.
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
-  ctx.on('console', (m) => { if (m.type() === 'error') errors.push('[build] ' + m.text()); });
-  ctx.on('pageerror', (e) => errors.push('[build] pageerror ' + e.message));
+  ctx.on('console', (m) => { console.log(`[browser ${m.type()}] ${m.text()}`); if (m.type() === 'error') errors.push('[build] ' + m.text()); });
+  ctx.on('pageerror', (e) => { console.log(`[browser pageerror] ${e.message}`); errors.push('[build] pageerror ' + e.message); });
 
   let page = await ctx.newPage();
-  await page.goto(BASE + '/', { waitUntil: 'networkidle' });
+  await page.goto(BASE + '/', { waitUntil: 'load' });
   await ready(page);
   await dismissTour(page);
 
@@ -225,7 +240,7 @@ async function main() {
   clean.on('pageerror', (e) => cleanErrors.push('pageerror ' + e.message));
 
   const cleanPage = await clean.newPage();
-  await cleanPage.goto(BASE + '/', { waitUntil: 'networkidle' });
+  await cleanPage.goto(BASE + '/', { waitUntil: 'load' });
   await ready(cleanPage);
   await dismissTour(cleanPage);
 
@@ -256,8 +271,14 @@ async function main() {
   ]) {
     const bad = await browser.newContext({ viewport: { width: 1024, height: 768 } });
     const badErrors = [];
-    bad.on('console', (m) => { if (m.type() === 'error') badErrors.push(m.text()); });
-    bad.on('pageerror', (e) => badErrors.push('pageerror ' + e.message));
+    bad.on('console', (m) => { 
+      console.log(`[bad context ${m.type()}] ${m.text()}`);
+      if (m.type() === 'error') badErrors.push(m.text()); 
+    });
+    bad.on('pageerror', (e) => { 
+      console.log(`[bad context pageerror] ${e.message}`);
+      badErrors.push('pageerror ' + e.message); 
+    });
 
     const bp = await bad.newPage();
     // Seed the store before app.js runs, on the right origin.
@@ -266,7 +287,7 @@ async function main() {
       ([k, v]) => window.localStorage.setItem(k, v),
       ['shape-maker/doc/v1', value]
     );
-    await bp.goto(BASE + '/', { waitUntil: 'networkidle' });
+    await bp.goto(BASE + '/', { waitUntil: 'load' });
     await ready(bp);
     await dismissTour(bp);
 

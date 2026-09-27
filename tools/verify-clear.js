@@ -39,7 +39,22 @@ const hint = (page) => page.evaluate(() => document.getElementById('hint').textC
 const nextId = (page) => page.evaluate(() => window.__cad.stored().nextId);
 
 async function ready(page) {
-  await page.waitForFunction(() => window.__cad && window.__cad.ready, null, { timeout: 30000 });
+  console.log('Calling ready(page)...');
+  try {
+    await page.waitForFunction(() => window.__cad && window.__cad.ready, null, { timeout: 30000 });
+    console.log('ready(page) success');
+  } catch (e) {
+    console.log('ready(page) failed, checking window.__cad status...');
+    const status = await page.evaluate(() => {
+      return {
+        exists: typeof window.__cad !== 'undefined',
+        type: typeof window.__cad,
+        ready: typeof window.__cad !== 'undefined' ? window.__cad.ready : 'N/A'
+      };
+    });
+    console.log('window.__cad status:', JSON.stringify(status));
+    throw e;
+  }
   await sleep(250);
 }
 
@@ -84,10 +99,14 @@ async function main() {
   /* ---------------------------------------------------- 1. build a document */
 
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
-  ctx.on('console', (m) => { if (m.type() === 'error') errors.push('[build] ' + m.text()); });
-  ctx.on('pageerror', (e) => errors.push('pageerror ' + e.message));
-
+  
   let page = await ctx.newPage();
+  page.on('console', (m) => {
+    console.log(`[browser ${m.type()}] ${m.text()}`);
+    if (m.type() === 'error') errors.push('[build] ' + m.text());
+  });
+  page.on('pageerror', (e) => errors.push('pageerror ' + e.message));
+
   await page.goto(BASE + '/', { waitUntil: 'networkidle' });
   await ready(page);
   await dismissTour(page);

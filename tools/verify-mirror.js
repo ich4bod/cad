@@ -23,7 +23,7 @@ try { chromium = require('playwright').chromium; }
 catch (e) { chromium = require('playwright-core').chromium; }
 
 const fs = require('fs');
-const { checkSTL, report } = require('/tools/stl-check.js');
+const { checkSTL, report } = require('./stl-check.js');
 
 const BASE = (process.argv[2] || 'https://cad.ichabod-crane.net/').replace(/\/$/, '');
 const OUT = process.env.OUT_DIR || '/proof';

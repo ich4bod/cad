@@ -17,8 +17,13 @@
      A kid who cannot undo a mistake stops playing.
 */
 
+window.__cad = { ready: false };
+console.log('!!! DEBUG: app.js starting');
+console.log('!!! DEBUG: app.js starting');
 import * as THREE from 'three';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
+
+console.log('!!! DEBUG: APP_STARTED');
 
 /* ------------------------------------------------------------------ model */
 
@@ -96,7 +101,7 @@ function restore(state) {
   always there when you come back, which is the only model a kid can hold.
 
   Two things this deliberately does not persist. The undo stack stays in
-  memory, because "undo the thing I did yesterday" is not a thing anyone wants
+  memory, because \"undo the thing I did yesterday\" is not a thing anyone wants
   and an unbounded history in a 5MB quota eventually bites. And the camera
   stays put, because the default view is the one that shows the whole plate.
 */
@@ -373,7 +378,7 @@ const overlaps = (a, b, gap) =>
 /*
   Where a new shape lands.
 
-  "The first empty cell" is the obvious answer and it is wrong: a shape is
+  \"The first empty cell\" is the obvious answer and it is wrong: a shape is
   30mm across on a 10mm grid, so it covers three cells in each direction and
   the cell next door is still inside it. Placing by empty cell buried every
   new shape in the one before it — you tapped Ball and nothing appeared,
@@ -416,11 +421,13 @@ function addShape(kind) {
     const s = { id: nextId++, kind, size: SIZE_DEFAULT, gx, gz, level: 0, twin: null };
     shapes.push(s);
     selectedId = s.id;
+    console.log('!!! DEBUG: addShape: shapes.length:', shapes.length);
 
     if (mirror) {
       const t = { ...s, id: nextId++, gx: -gx, twin: s.id };
       s.twin = t.id;
       shapes.push(t);
+      console.log('!!! DEBUG: addShape (mirror): shapes.length:', shapes.length);
     }
 
     after(mirror ? `Two ${KINDS[kind].label}s! Drag one and both move.`
@@ -507,7 +514,10 @@ function after(message) {
   syncScene();
   updateUI();
   save();
-  if (message) setHint(message);
+  if (message) {
+    console.error('!!! DEBUG: after called with:', message);
+    setHint(message);
+  }
 }
 
 /* --------------------------------------------------------------- pointers */
@@ -614,7 +624,7 @@ window.addEventListener('pointerup', (e) => {
     updateUI();
     save();
   } else if (downAt && !downAt.onShape) {
-    // A tap on empty space with no orbiting means "never mind" — let go of
+    // A tap on empty space with no orbiting means \"never mind\" — let go of
     // the selection. A drag of the camera leaves the selection alone.
     const moved = Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y);
     if (moved < 6 && selectedId !== null) {
@@ -645,7 +655,7 @@ const WELD_SPREAD = 0.06;   // mm, the range the per-shape jitter spans
   Two blocks snapped to touching grid cells share a face exactly. Exported as
   they look, that face appears twice and every edge on it belongs to four
   triangles — a non-manifold mesh, which is precisely the thing slicers refuse.
-  Growing each shape a fifth of a millimetre turns every "touching" into a real
+  Growing each shape a fifth of a millimetre turns every \"touching\" into a real
   overlap, so the union is watertight.
 
   The jitter is the second half of that. Two shapes of the same kind and size
@@ -762,10 +772,10 @@ const els = {
    Its completion lives beside the document: returning makers keep their whole
    canvas, including an empty canvas, without being stopped by this again. */
 const tourSteps = [
-  { target: '[data-tour="create"]', title: 'Make a first shape', copy: 'Tap Block to put one on the plate.' },
-  { target: '[data-tour="delete"]', title: 'Try anything', copy: 'Choose a shape, then Delete removes it.' },
-  { target: '[data-tour="undo"]', title: 'Mistakes are fine', copy: 'Undo brings back the last thing you changed.' },
-  { target: '[data-tour="orbit"]', title: 'Look around', copy: 'Drag empty sky to spin your model. Drag a shape to move it.' },
+  { target: '[data-tour=\"create\"]', title: 'Make a first shape', copy: 'Tap Block to put one on the plate.' },
+  { target: '[data-tour=\"delete\"]', title: 'Try anything', copy: 'Choose a shape, then Delete removes it.' },
+  { target: '[data-tour=\"undo\"]', title: 'Mistakes are fine', copy: 'Undo brings back the last thing you changed.' },
+  { target: '[data-tour=\"orbit\"]', title: 'Look around', copy: 'Drag empty sky to spin your model. Drag a shape to move it.' },
 ];
 let tourStep = 0;
 let tourTarget = null;
@@ -809,22 +819,28 @@ function setHint(text) {
                    : 'Tap a shape below to start');
 }
 
-function updateUI() {
-  const s = selected();
-  els.undo.disabled = undoStack.length === 0;
-  els.save.disabled = shapes.length === 0;
-  els.copy.disabled = !s;
-  els.bigger.disabled = !s || s.size >= SIZE_MAX;
-  els.smaller.disabled = !s || s.size <= SIZE_MIN;
-  els.up.disabled = !s || s.level >= LEVEL_MAX;
-  els.down.disabled = !s || s.level <= 0;
-  els.del.disabled = !s;
-  els.clear.disabled = shapes.length === 0;
-  // Mirror is the one control here that has an on and an off, so it is the one
-  // control that shows its state. It is never disabled: there is no scene it
-  // is wrong to turn on or off in.
-  els.mirror.setAttribute('aria-pressed', String(mirror));
-}
+  function updateUI() {
+    try {
+      const s = selected();
+      console.log('!!! DEBUG: updateUI called');
+      console.log('!!! DEBUG: shapes.length:', shapes.length);
+      console.log('!!! DEBUG: clearBtn.disabled:', els.clear ? els.clear.disabled : 'N/A');
+      console.log('!!! DEBUG: typeof clearBtn.disabled:', typeof els.clear ? els.clear.disabled : 'N/A');
+      els.undo.disabled = undoStack.length === 0;
+      els.save.disabled = shapes.length === 0;
+      els.copy.disabled = !s;
+      els.bigger.disabled = !s || s.size >= SIZE_MAX;
+      els.smaller.disabled = !s || s.size <= SIZE_MIN;
+      els.up.disabled = !s || s.level >= LEVEL_MAX;
+      els.down.disabled = !s || s.level <= 0;
+      els.del.disabled = !s;
+      els.clear.disabled = shapes.length === 0;
+      els.mirror.setAttribute('aria-pressed', String(mirror));
+    } catch (err) {
+      console.error('CRITICAL: updateUI crashed:', err);
+      throw err;
+    }
+  }
 window.updateUI = updateUI;
 window.duplicateSelected = duplicateSelected;
 
@@ -926,7 +942,7 @@ function selectShapeBy(delta) {
     return;
   }
   const at = shapes.findIndex((s) => s.id === selectedId);
-  const index = at < 0 ? (delta > 0 ? 0 : shapes.length - 1) :
+  const index = at < 0 ? (delta > 0 ? 0 : shapes.length - 1) :\
     (at + delta + shapes.length) % shapes.length;
   const s = shapes[index];
   selectedId = s.id;
@@ -1051,6 +1067,7 @@ window.__cad = {
   cameraTarget: () => ({ x: controls.target.x, y: controls.target.y, z: controls.target.z }),
   /** The autosave, as the verifier sees it: where it lives, and what is in it
    *  right now without going through the app's own parser. */
+  nextId: () => nextId,
   storageKey: () => STORE_KEY,
   stored: () => {
     try { return JSON.parse(window.localStorage.getItem(STORE_KEY)); }
@@ -1063,4 +1080,5 @@ window.__cad = {
   tour: () => ({ visible: !els.tour.hidden, step: tourStep, target: tourSteps[tourStep]?.target }),
   ready: true,
 };
+console.log('!!! DEBUG: window.__cad initialized');
 window.addShape = addShape;
