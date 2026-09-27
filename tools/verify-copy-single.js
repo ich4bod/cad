@@ -8,22 +8,15 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 (async () => {
   const browser = await chromium.launch({ args: ['--no-sandbox'] });
   const page = await browser.newPage();
-  page.on('pageerror', e => console.log('PAGE ERROR:', e.message));
-  page.on('console', msg => console.log('PAGE CONSOLE:', msg.text()));
-  page.on('response', response => {
-    if (response.status() === 404) console.log('404 FOUND:', response.url());
-  });
 
   try {
-    console.log('Navigating...');
     await page.goto(process.argv[2] || 'https://cad.ichabod-crane.net/', { waitUntil: 'domcontentloaded' });
-    console.log('Page loaded.');
+
+    await page.setViewportSize({ width: 390, height: 844 });
 
     await page.waitForFunction(() => window.__cad && window.__cad.ready, null, { timeout: 5000 });
-    console.log('CAD is ready');
 
     // Dismiss tour
-    console.log('Dismissing tour...');
     const tourLink = await page.evaluate(() => {
       const tour = document.getElementById('tour');
       if (tour && !tour.hidden) return true;
@@ -35,12 +28,10 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
     }
 
     // 1. Add a Block
-    console.log('Adding a block...');
     await page.click('[data-kind="cube"]');
     await sleep(500);
 
     // 2. Make it Bigger and Up
-    console.log('Making it bigger and up...');
     await page.click('#btn-bigger');
     await sleep(100);
     await page.click('#btn-bigger');
@@ -51,12 +42,10 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
     await sleep(100);
 
     // 3. Click Copy
-    console.log('Clicking copy...');
     await page.click('#btn-copy');
     await sleep(500);
 
     // 4. Assert two distinct unpaired records
-    console.log('Asserting two distinct unpaired records...');
     const shapes = await page.evaluate(() => window.__cad.shapes());
     if (shapes.length !== 2) {
       throw new Error(`Expected 2 shapes after copy, got ${shapes.length}`);
@@ -89,29 +78,24 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
     }
 
     // 5. Click Undo
-    console.log('Clicking undo...');
     await page.click('#btn-undo');
     await sleep(500);
 
     // 6. Assert only the original remains
-    console.log('Asserting only original remains...');
     const shapesAfterUndo = await page.evaluate(() => window.__cad.shapes());
     if (shapesAfterUndo.length !== 1) {
       throw new Error(`Expected 1 shape after undo, got ${shapesAfterUndo.length}`);
     }
 
     // 7. Reload and assert it persists
-    console.log('Reloading...');
     await page.reload({ waitUntil: 'domcontentloaded' });
     await page.waitForFunction(() => window.__cad && window.__cad.ready, null, { timeout: 5000 });
-    console.log('Reloaded.');
     const shapesAfterReload = await page.evaluate(() => window.__cad.shapes());
     if (shapesAfterReload.length !== 1) {
       throw new Error(`Expected 1 shape after reload, got ${shapesAfterReload.length}`);
     }
 
     // 8. Check scrollWidth vs innerWidth
-    console.log('Checking scrollWidth vs innerWidth...');
     const dimensions = await page.evaluate(() => ({
       scrollWidth: document.documentElement.scrollWidth,
       innerWidth: window.innerWidth
@@ -120,10 +104,10 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
       throw new Error(`ScrollWidth (${dimensions.scrollWidth}) != innerWidth (${dimensions.innerWidth})`);
     }
 
-    console.log('single-shape copy verified with undo, autosave, and phone layout');
+    process.stdout.write('single-shape copy verified with undo, autosave, and phone layout\n');
 
   } catch (err) {
-    console.error('Main test loop error:', err.message);
+    process.stderr.write(err.message + '\n');
     process.exit(1);
   }
 

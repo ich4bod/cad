@@ -71,7 +71,6 @@ function snapshot() {
 }
 
 function pushUndo() {
-  console.log('pushUndo called');
   undoStack.push(snapshot());
   if (undoStack.length > UNDO_LIMIT) undoStack.shift();
 }
@@ -194,8 +193,7 @@ function load() {
 }
 
 const selected = () => {
-  const s = shapes.find((s) => s.id === selectedId) || null;
-  console.log('selected() - selectedId:', selectedId, 'found shape:', s?.id);
+  const s = shapes.find((s) => s.id == selectedId) || null;
   return s;
 };
 
@@ -390,7 +388,6 @@ const overlaps = (a, b, gap) =>
   line — a pair placed at gx=0 would be one shape wearing another.
 */
 function freeCell(paired) {
-  console.log('freeCell called');
   const placed = shapes.map((s) => footprint(s.size, s.gx, s.gz));
   const clear = (gx, gz) => !placed.some((p) => overlaps(footprint(SIZE_DEFAULT, gx, gz), p, 1));
   const pairFits = (gx, gz) =>
@@ -400,42 +397,30 @@ function freeCell(paired) {
   for (const c of cells()) {
     if (!clear(c.gx, c.gz)) continue;
     if (paired && !pairFits(c.gx, c.gz)) continue;
-    console.log('freeCell found cell:', c);
     return c;
   }
-  // Board carpeted. Fall back to a cell nothing is centred on, then give up
-  // and stack near the middle — both better than refusing to add the shape.
   const taken = (gx, gz) => shapes.some((s) => s.gx === gx && s.gz === gz);
   for (const c of cells()) {
     if (taken(c.gx, c.gz)) continue;
     if (paired && (c.gx === 0 || taken(-c.gx, c.gz))) continue;
-    console.log('freeCell found fallback cell:', c);
     return c;
   }
-  console.log('freeCell gave up');
-  console.log('DEBUG: line 417 reached');
   return paired ? { gx: 2, gz: 0 } : { gx: 0, gz: 0 };
 }
 
 window.addShape = addShape;
 function addShape(kind) {
   try {
-    console.log('addShape called with kind:', kind);
     pushUndo();
     const { gx, gz } = freeCell(mirror);
-    console.log('freeCell returned:', { gx, gz });
     const s = { id: nextId++, kind, size: SIZE_DEFAULT, gx, gz, level: 0, twin: null };
-    console.log('new shape:', s);
     shapes.push(s);
-    console.log('shapes length after push:', shapes.length);
     selectedId = s.id;
-    console.log('selectedId set to:', selectedId);
 
     if (mirror) {
       const t = { ...s, id: nextId++, gx: -gx, twin: s.id };
       s.twin = t.id;
       shapes.push(t);
-      console.log('mirror twin added:', t);
     }
 
     after(mirror ? `Two ${KINDS[kind].label}s! Drag one and both move.`
@@ -511,8 +496,6 @@ function undo() {
  *  path that changes state already comes through here. The exception is a
  *  drag, which moves a shape a frame at a time and saves once on pointerup. */
 function after(message) {
-  console.log('Calling after:', message);
-  console.log('current mirror state:', mirror);
   syncScene();
   updateUI();
   save();
@@ -819,7 +802,6 @@ function setHint(text) {
 
 function updateUI() {
   const s = selected();
-  console.log('updateUI - selectedId:', selectedId, 'selected shape:', s?.id);
   els.undo.disabled = undoStack.length === 0;
   els.save.disabled = shapes.length === 0;
   els.copy.disabled = !s || s.twin !== null;
@@ -833,8 +815,6 @@ function updateUI() {
   // is wrong to turn on or off in.
   els.mirror.setAttribute('aria-pressed', String(mirror));
 }
-window.updateUI = updateUI;
-console.log('window.updateUI set to:', typeof window.updateUI);
 window.updateUI = updateUI;
 
 for (const btn of document.querySelectorAll('#palette .shape')) {
