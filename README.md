@@ -13,9 +13,10 @@ Data: disposable; models are saved only in each visitor's browser.
 
 Four primitives — block, ball, tube, cone — on a 10mm grid. Add them from the
 palette, drag them around the plate, make them bigger or smaller in 10mm steps,
-lift them up a level at a time to stack, delete them, and undo any of it. Orbit
-the camera by dragging empty space. Save writes a binary STL of everything on
-the plate.
+lift them up a level at a time to stack, delete them, and undo any of it. Copy
+duplicates a shape. Clear empties the whole plate in one tap; Undo restores the
+whole model until the tab closes. Orbit the camera by dragging empty space. Save
+writes a binary STL of everything on the plate.
 
 Press **Mirror** and shapes come in twos: the one you place and its twin across
 the plate's centre line, moving, growing, rising and going away together. The

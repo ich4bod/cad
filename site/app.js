@@ -466,6 +466,14 @@ function removeSelected() {
   after(t ? 'Both gone. Undo brings them back.' : 'Gone. Undo brings it back.');
 }
 
+function clearAll() {
+  if (!shapes.length) return;
+  pushUndo();
+  shapes = [];
+  selectedId = null;
+  after('Clean plate. Undo brings everything back.');
+}
+
 /*
   The toggle, and the only control this feature adds.
 
@@ -747,6 +755,7 @@ const els = {
   tourSkip: document.getElementById('tour-skip'),
   tourNext: document.getElementById('tour-next'),
   copy: document.getElementById('btn-copy'),
+  clear: document.getElementById('btn-clear'),
 };
 
 /* A first visit gets four concrete gestures, not a mode or a lesson screen.
@@ -810,6 +819,7 @@ function updateUI() {
   els.up.disabled = !s || s.level >= LEVEL_MAX;
   els.down.disabled = !s || s.level <= 0;
   els.del.disabled = !s;
+  els.clear.disabled = shapes.length === 0;
   // Mirror is the one control here that has an on and an off, so it is the one
   // control that shows its state. It is never disabled: there is no scene it
   // is wrong to turn on or off in.
@@ -827,6 +837,7 @@ els.up.addEventListener('click', () => lift(1));
 els.down.addEventListener('click', () => lift(-1));
 els.del.addEventListener('click', removeSelected);
 els.mirror.addEventListener('click', toggleMirror);
+els.clear.addEventListener('click', clearAll);
 els.undo.addEventListener('click', undo);
 els.save.addEventListener('click', download);
 els.copy.addEventListener('click', duplicateSelected);
@@ -991,10 +1002,14 @@ renderer.setAnimationLoop(() => {
   byte-identical, and a failed parse should not overwrite whatever is in there.
 */
 const saved = load();
-if (saved && saved.shapes.length) {
+if (saved) {
   restore(saved);
   syncScene();
-  setHint('Here it is, just how you left it.');
+  if (saved.shapes.length) {
+    setHint('Here it is, just how you left it.');
+  } else {
+    setHint('Clean plate. Tap a shape to start.');
+  }
 } else {
   setHint('');
 }

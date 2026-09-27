@@ -186,6 +186,8 @@ button:disabled {
 .tool-download:not(:disabled) { color: #ffffff; border-color: var(--save); background: var(--save); }
 .tool-delete:not(:disabled) { color: var(--danger); border-color: #ffc9c9; background: #fff5f5; }
 
+.tool-clear:not(:disabled) { color: #a32f2f; border-color: #ffc9c2; background: #fff0ed; }
+
 /* The chosen shape's palette button is not a mode — nothing stays pressed.
    Only the "which shape is selected in the scene" state is shown, and it is
    shown in the scene itself with an outline, where a kid is already looking.
@@ -270,6 +272,22 @@ button:disabled {
   #tour { right: 10px; bottom: 10px; width: calc(100vw - 20px); }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  button { transition: none; }
+@media (max-width: 460px) {
+  #topbar {
+    flex-wrap: wrap;
+  }
+  #topactions {
+    flex-basis: 100%;
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 460px) {
+  #topbar {
+    flex-wrap: wrap;
+  }
+  #topactions {
+    flex-basis: 100%;
+    justify-content: flex-end;
+  }
 }
