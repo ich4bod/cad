@@ -753,6 +753,7 @@ const els = {
   undo: document.getElementById('btn-undo'),
   home: document.getElementById('btn-home'),
   save: document.getElementById('btn-download'),
+  saveHint: document.getElementById('save-hint'),
   bigger: document.getElementById('btn-bigger'),
   smaller: document.getElementById('btn-smaller'),
   up: document.getElementById('btn-up'),
@@ -830,6 +831,7 @@ function setHint(text) {
       console.log('!!! DEBUG: typeof clearBtn.disabled:', typeof els.clear ? els.clear.disabled : 'N/A');
       els.undo.disabled = undoStack.length === 0;
       els.save.disabled = shapes.length === 0;
+      els.saveHint.hidden = shapes.length === 0;
       els.copy.disabled = !s;
       els.bigger.disabled = !s || s.size >= SIZE_MAX;
       els.smaller.disabled = !s || s.size <= SIZE_MIN;

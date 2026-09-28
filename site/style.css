@@ -75,8 +75,20 @@ html, body {
 #topactions {
   flex: 0 0 auto;
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
   gap: 10px;
 }
+
+#save-hint {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+#save-hint[hidden] { display: none; }
 
 /* ---------- the scene ---------- */
 
