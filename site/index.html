@@ -29,7 +29,7 @@
 <link rel="canonical" href="https://cad.ichabod-crane.net/">
 
 <link rel="icon" href="favicon.svg">
-<link rel="stylesheet" href="style.css?v=4">
+<link rel="stylesheet" href="style.css?v=5">
 <script type="importmap">
 {
   "imports": {
@@ -45,6 +45,7 @@
   <header id="topbar">
     <h1 id="brand">Shape Maker</h1>
     <p id="shape-count" aria-live="polite">0 shapes</p>
+    <output id="selected-readout" aria-live="polite">No shape selected</output>
     <p id="hint" aria-live="polite">Tap a shape below to start</p>
     <div id="topactions">
       <button id="btn-undo" class="tool tool-undo" type="button" disabled data-tour="undo">
@@ -160,6 +161,6 @@
   <p class="noscript">Shape Maker needs JavaScript switched on — the whole thing runs in your browser, and there is no server to fall back to.</p>
 </noscript>
 
-<script type="module" src="app.js?v=6"></script>
+<script type="module" src="app.js?v=7"></script>
 </body>
 </html>

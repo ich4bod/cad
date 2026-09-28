@@ -742,6 +742,7 @@ function download() {
 const els = {
   hint: document.getElementById('hint'),
   shapeCount: document.getElementById('shape-count'),
+  selectedReadout: document.getElementById('selected-readout'),
   undo: document.getElementById('btn-undo'),
   home: document.getElementById('btn-home'),
   save: document.getElementById('btn-download'),
@@ -818,6 +819,9 @@ function setHint(text) {
     try {
       const s = selected();
       els.shapeCount.textContent = `${shapes.length} ${shapes.length === 1 ? 'shape' : 'shapes'}`;
+      els.selectedReadout.textContent = s
+        ? `${KINDS[s.kind].label[0].toUpperCase()}${KINDS[s.kind].label.slice(1)} · ${s.size}mm · level ${s.level}`
+        : 'No shape selected';
       els.undo.disabled = undoStack.length === 0;
       els.save.disabled = shapes.length === 0;
       els.saveHint.hidden = shapes.length === 0;
