@@ -24,8 +24,9 @@ async function noteHidden(page) {
 }
 
 async function selectShape(page, id) {
-  const point = await page.evaluate((shapeId) => window.__cad.screenOf(shapeId), id);
-  await page.mouse.click(point.x, point.y);
+  if (await page.evaluate(() => window.__cad.selectedId()) === id) return;
+  await page.locator('#scene').focus();
+  await page.keyboard.press(']');
   await page.waitForFunction((shapeId) => window.__cad.selectedId() === shapeId, id);
 }
 
