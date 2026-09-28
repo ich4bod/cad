@@ -51,6 +51,15 @@ async function main() {
     await ready(page);
     check(await count(page), '1 shape', 'reload persisted model');
 
+    await page.click('#btn-delete');
+    check(await count(page), '0 shapes', 'delete shape');
+
+    await page.click('#btn-undo');
+    check(await count(page), '1 shape', 'undo delete');
+
+    await page.click('#btn-clear');
+    check(await count(page), '0 shapes', 'clear model');
+
     console.log('shape count verified for single and mirrored shapes');
   } finally {
     await browser.close();
