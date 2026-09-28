@@ -942,8 +942,8 @@ function selectShapeBy(delta) {
     return;
   }
   const at = shapes.findIndex((s) => s.id === selectedId);
-  const index = at < 0 ? (delta > 0 ? 0 : shapes.length - 1) :\
-    (at + delta + shapes.length) % shapes.length;
+  const index = at < 0 ? (delta > 0 ? 0 : shapes.length - 1)
+    : (at + delta + shapes.length) % shapes.length;
   const s = shapes[index];
   selectedId = s.id;
   syncScene();
