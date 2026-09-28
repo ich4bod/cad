@@ -131,6 +131,19 @@ html, body {
 
 #save-hint[hidden] { display: none; }
 
+#print-ready {
+  margin: 0;
+  padding: 2px 7px;
+  color: #17352c;
+  font-size: 13px;
+  font-weight: 700;
+  background: #dcebcf;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+#print-ready[hidden] { display: none; }
+
 /* ---------- the scene ---------- */
 
 #stage {

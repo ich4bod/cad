@@ -753,6 +753,7 @@ const els = {
   save: document.getElementById('btn-download'),
   modelName: document.getElementById('model-name'),
   saveHint: document.getElementById('save-hint'),
+  printReady: document.getElementById('print-ready'),
   bigger: document.getElementById('btn-bigger'),
   smaller: document.getElementById('btn-smaller'),
   up: document.getElementById('btn-up'),
@@ -833,6 +834,10 @@ function setHint(text) {
       els.save.disabled = shapes.length === 0;
       els.modelName.disabled = shapes.length === 0;
       els.saveHint.hidden = shapes.length === 0;
+      els.printReady.hidden = shapes.length === 0;
+      els.printReady.textContent = shapes.length === 1
+        ? 'Ready to print: 1 shape'
+        : `Ready to print: ${shapes.length} shapes`;
       els.copy.disabled = !s;
       els.bigger.disabled = !s || s.size >= SIZE_MAX;
       els.smaller.disabled = !s || s.size <= SIZE_MIN;
