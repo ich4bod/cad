@@ -17,11 +17,11 @@
      A kid who cannot undo a mistake stops playing.
 */
 
-window.__cad = { ready: false };
-console.log('!!! DEBUG: app.js starting');
-console.log('!!! DEBUG: app.js starting');
 import * as THREE from 'three';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
+
+window.__cad = { ready: false };
+console.log('!!! DEBUG: app.js starting');
 
 console.log('!!! DEBUG: APP_STARTED');
 

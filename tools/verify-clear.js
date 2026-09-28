@@ -202,7 +202,8 @@ async function main() {
     if (failures.length || errors.length) {
       for (const f of failures) console.error('  FAILED: ' + f);
       for (const e of errors) console.error('  ' + e);
-      process.exit(1);
+      process.exitCode = 1;
+      return;
     }
     console.log('clear verified for one-step undo, empty autosave, reload, mirror, and phone layout');
   } finally {
