@@ -1,6 +1,0 @@
-# Local verification scratch: the playwright-core install, the downloaded STL,
-# and the screenshots the browser run produces. All reproducible with
-# tools/verify.js.
-.verify/
-proof/
-node_modules/

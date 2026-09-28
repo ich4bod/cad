@@ -11,31 +11,31 @@ async function main() {
   const page = await ctx.newPage();
 
   // Listen for console logs
-  page.on('console', msg => console.log(`BROWSER LOG [${msg.type()}]: ${msg.text()}`));
+  page.on('console', msg => console.error(`BROWSER LOG [${msg.type()}]: ${msg.text()}`));
 
   try {
-    console.log(`Navigating to ${BASE}/...`);
+    console.error(`Navigating to ${BASE}/...`);
     await page.goto(BASE + '/', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('body');
-    console.log('Page loaded.');
+    console.error('Page loaded.');
 
     // 1. dismiss tour
     if (await page.isVisible('#tour')) {
-      console.log('Dismissing tour...');
+      console.error('Dismissing tour...');
       await page.click('#tour-skip');
     }
 
     // 2. add Block
-    console.log('Looking for cube button...');
+    console.error('Looking for cube button...');
     const buttons = await page.evaluate(() => Array.from(document.querySelectorAll('button')).map(b => b.getAttribute('data-kind')));
-    console.log('Available data-kinds on buttons:', buttons);
+    console.error('Available data-kinds on buttons:', buttons);
     
     await page.click('button[data-kind="cube"]');
-    console.log('Block added.');
+    console.error('Block added.');
 
     // Wait for the shape to be added to the internal state and UI to update
     await page.waitForFunction(() => window.__cad.shapes().some(s => s.kind === 'cube'));
-    console.log('Shape in state.');
+    console.error('Shape in state.');
 
     // 3. capture state
     const initialState = await page.evaluate(() => {
@@ -44,18 +44,18 @@ async function main() {
       return { gx: s.gx, gz: s.gz, size: s.size, paint: s.paint };
     });
     if (!initialState) throw new Error('Could not find cube shape in window.__cad.shapes()');
-    console.log('Initial state:', initialState);
+    console.error('Initial state:', initialState);
 
     // 4. raise it three levels
-    console.log('Raising level...');
+    console.error('Raising level...');
     for (let i = 0; i < 3; i++) {
       await page.click('#btn-up');
     }
     await page.waitForFunction(() => window.__cad.shapes().find(x => x.kind === 'cube')?.level === 3);
-    console.log('Level reached 3.');
+    console.error('Level reached 3.');
 
     // 5. click To plate
-    console.log('Clicking To plate...');
+    console.error('Clicking To plate...');
     await page.waitForSelector('#btn-plate:not([disabled])');
     await page.click('#btn-plate');
 
@@ -78,24 +78,24 @@ async function main() {
     if (afterPlateState.gz !== initialState.gz) throw new Error(`gz changed: ${initialState.gz} -> ${afterPlateState.gz}`);
     if (afterPlateState.size !== initialState.size) throw new Error(`size changed: ${initialState.size} -> ${afterPlateState.size}`);
     if (afterPlateState.paint !== initialState.paint) throw new Error(`paint changed: ${initialState.paint} -> ${afterPlateState.paint}`);
-    console.log('Single shape toPlate verified.');
+    console.error('Single shape toPlate verified.');
 
     // 7. Undo and assert level three
     await page.click('#btn-undo');
     await page.waitForFunction(() => window.__cad.shapes().find(x => x.kind === 'cube')?.level === 3);
-    console.log('Undo verified.');
+    console.error('Undo verified.');
 
-    // 8. add Ball
-    console.log('Adding Ball...');
+    // 8. turn Mirror on
+    console.error('Turning Mirror on...');
+    await page.click('#btn-mirror');
+
+    // 9. add Ball
+    console.error('Adding Ball...');
     await page.click('button[data-kind="ball"]');
     await page.waitForFunction(() => window.__cad.shapes().some(s => s.kind === 'ball'));
 
-    // 9. turn Mirror on
-    console.log('Turning Mirror on...');
-    await page.click('#btn-mirror');
-
     // 10. raise it twice
-    console.log('Raising mirrored level...');
+    console.error('Raising mirrored level...');
     for (let i = 0; i < 2; i++) {
       await page.click('#btn-up');
     }
@@ -109,10 +109,10 @@ async function main() {
       return s.map(x => ({ gx: x.gx, gz: x.gz, size: x.size, paint: x.paint }));
     });
     if (!mirroredInitialState || mirroredInitialState.length !== 2) throw new Error('Could not find mirrored ball pair');
-    console.log('Mirrored initial state captured.');
+    console.error('Mirrored initial state captured.');
 
     // 12. click To plate
-    console.log('Clicking To plate for mirrored pair...');
+    console.error('Clicking To plate for mirrored pair...');
     await page.waitForSelector('#btn-plate:not([disabled])');
     await page.click('#btn-plate');
 
@@ -137,10 +137,10 @@ async function main() {
       if (afterMirrorPlateState[i].size !== mirroredInitialState[i].size) throw new Error(`Ball ${i+1} size changed`);
       if (afterMirrorPlateState[i].paint !== mirroredInitialState[i].paint) throw new Error(`Ball ${i+1} paint changed`);
     }
-    console.log('Mirrored shape toPlate verified.');
+    console.error('Mirrored shape toPlate verified.');
 
     // 14. Undo and assert both two
-    console.log('Undoing mirrored pair...');
+    console.error('Undoing mirrored pair...');
     await page.click('#btn-undo');
     await page.waitForFunction(() => {
       const s = window.__cad.shapes().filter(x => x.kind === 'ball' && x.twin !== null);
