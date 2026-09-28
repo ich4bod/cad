@@ -21,9 +21,6 @@ import * as THREE from 'three';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 
 window.__cad = { ready: false };
-console.log('!!! DEBUG: app.js starting');
-
-console.log('!!! DEBUG: APP_STARTED');
 
 /* ------------------------------------------------------------------ model */
 
@@ -421,13 +418,10 @@ function addShape(kind) {
     const s = { id: nextId++, kind, size: SIZE_DEFAULT, gx, gz, level: 0, twin: null };
     shapes.push(s);
     selectedId = s.id;
-    console.log('!!! DEBUG: addShape: shapes.length:', shapes.length);
-
     if (mirror) {
       const t = { ...s, id: nextId++, gx: -gx, twin: s.id };
       s.twin = t.id;
       shapes.push(t);
-      console.log('!!! DEBUG: addShape (mirror): shapes.length:', shapes.length);
     }
 
     after(mirror ? `Two ${KINDS[kind].label}s! Drag one and both move.`
@@ -514,10 +508,7 @@ function after(message) {
   syncScene();
   updateUI();
   save();
-  if (message) {
-    console.error('!!! DEBUG: after called with:', message);
-    setHint(message);
-  }
+  if (message) setHint(message);
 }
 
 /* --------------------------------------------------------------- pointers */
@@ -826,10 +817,6 @@ function setHint(text) {
   function updateUI() {
     try {
       const s = selected();
-      console.log('!!! DEBUG: updateUI called');
-      console.log('!!! DEBUG: shapes.length:', shapes.length);
-      console.log('!!! DEBUG: clearBtn.disabled:', els.clear ? els.clear.disabled : 'N/A');
-      console.log('!!! DEBUG: typeof clearBtn.disabled:', typeof els.clear ? els.clear.disabled : 'N/A');
       els.shapeCount.textContent = `${shapes.length} ${shapes.length === 1 ? 'shape' : 'shapes'}`;
       els.undo.disabled = undoStack.length === 0;
       els.save.disabled = shapes.length === 0;
@@ -1094,5 +1081,4 @@ window.__cad = {
   tour: () => ({ visible: !els.tour.hidden, step: tourStep, target: tourSteps[tourStep]?.target }),
   ready: true,
 };
-console.log('!!! DEBUG: window.__cad initialized');
 window.addShape = addShape;
