@@ -467,6 +467,16 @@ function lift(delta) {
   after(delta > 0 ? 'Up it goes.' : 'Back down.');
 }
 
+function toPlate() {
+  const s = selected();
+  if (!s || s.level === 0) return;
+  pushUndo();
+  s.level = 0;
+  const t = twinOf(s);
+  if (t) t.level = 0;
+  after('Back on the plate.');
+}
+
 function removeSelected() {
   const s = selected();
   if (!s) return;
@@ -783,6 +793,7 @@ const els = {
   down: document.getElementById('btn-down'),
   del: document.getElementById('btn-delete'),
   mirror: document.getElementById('btn-mirror'),
+  plate: document.getElementById('btn-plate'),
   tour: document.getElementById('tour'),
   tourCount: document.getElementById('tour-count'),
   tourTitle: document.getElementById('tour-title'),
@@ -868,6 +879,7 @@ function setHint(text) {
       els.up.disabled = !s || s.level >= LEVEL_MAX;
       els.down.disabled = !s || s.level <= 0;
       els.del.disabled = !s;
+      els.plate.disabled = !s || s.level === 0;
       els.clear.disabled = shapes.length === 0;
       els.starterShelf.hidden = shapes.length !== 0;
       els.mirror.setAttribute('aria-pressed', String(mirror));
@@ -902,6 +914,7 @@ els.undo.addEventListener('click', undo);
 els.home.addEventListener('click', resetView);
 els.save.addEventListener('click', download);
 els.copy.addEventListener('click', duplicateSelected);
+els.plate.addEventListener('click', toPlate);
 
 function duplicateSelected() {
   const s = selected();
