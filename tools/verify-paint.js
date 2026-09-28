@@ -23,12 +23,6 @@ async function main() {
     await page.click('.shape[data-kind="cube"]');
 
     // 3. paint violet
-    const paintExists = await page.evaluate(() => !!document.getElementById('paint'));
-    console.log('Paint element exists:', paintExists);
-    if (paintExists) {
-      const isHidden = await page.evaluate(() => document.getElementById('paint').hidden);
-      console.log('Paint element is hidden:', isHidden);
-    }
     await page.click('[data-paint="violet"]');
 
     // 4. assert live material color through a small window.__cad.colour(id) hook and stored paint
