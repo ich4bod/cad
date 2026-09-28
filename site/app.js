@@ -766,6 +766,7 @@ const els = {
   tourNext: document.getElementById('tour-next'),
   copy: document.getElementById('btn-copy'),
   clear: document.getElementById('btn-clear'),
+  starterShelf: document.getElementById('starter-shelf'),
 };
 
 /* A first visit gets four concrete gestures, not a mode or a lesson screen.
@@ -835,6 +836,7 @@ function setHint(text) {
       els.down.disabled = !s || s.level <= 0;
       els.del.disabled = !s;
       els.clear.disabled = shapes.length === 0;
+      els.starterShelf.hidden = shapes.length !== 0;
       els.mirror.setAttribute('aria-pressed', String(mirror));
     } catch (err) {
       console.error('CRITICAL: updateUI crashed:', err);

@@ -132,10 +132,28 @@ html, body {
   border-top: 1px solid var(--edge);
 }
 
+#palette-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
 #palette, #symmetry, #edit {
   display: flex;
   gap: 10px;
 }
+
+#starter-shelf {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 14px;
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+#starter-shelf[hidden] { display: none; }
 
 #symmetry, #edit {
   padding-left: 18px;
