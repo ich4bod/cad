@@ -743,6 +743,7 @@ const els = {
   hint: document.getElementById('hint'),
   shapeCount: document.getElementById('shape-count'),
   selectedReadout: document.getElementById('selected-readout'),
+  mirrorNote: document.getElementById('mirror-note'),
   undo: document.getElementById('btn-undo'),
   home: document.getElementById('btn-home'),
   save: document.getElementById('btn-download'),
@@ -822,6 +823,7 @@ function setHint(text) {
       els.selectedReadout.textContent = s
         ? `${KINDS[s.kind].label[0].toUpperCase()}${KINDS[s.kind].label.slice(1)} · ${s.size}mm · level ${s.level} · grid (${s.gx}, ${s.gz})`
         : 'No shape selected';
+      els.mirrorNote.hidden = !s || s.twin === null;
       els.undo.disabled = undoStack.length === 0;
       els.save.disabled = shapes.length === 0;
       els.saveHint.hidden = shapes.length === 0;

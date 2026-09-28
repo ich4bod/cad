@@ -80,6 +80,14 @@ html, body {
   white-space: nowrap;
 }
 
+#mirror-note {
+  margin: 4px 0 0;
+  color: #536174;
+  font-size: 13px;
+}
+
+#mirror-note[hidden] { display: none; }
+
 #hint {
   margin: 0;
   flex: 1 1 auto;
