@@ -1,0 +1,3 @@
+copy-check https://cad.ichabod-crane.net 2026-09-27T13:34:26.885Z
+
+PASSED — 50 checks, no banned phrase in any live copy.
