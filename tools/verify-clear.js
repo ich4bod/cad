@@ -11,8 +11,14 @@ const failures = [];
 
 function check(name, cond, detail) {
   const line = name + (detail ? '  [' + detail + ']' : '');
-  if (cond) { passed++; console.error('  PASS  ' + line); }
-  else { failures.push(line); console.error('  FAIL  ' + line); }
+  if (cond) { 
+    passed++; 
+    process.stderr.write('  PASS  ' + line + '\n'); 
+  }
+  else { 
+    failures.push(line); 
+    process.stderr.write('  FAIL  ' + line + '\n'); 
+  }
 }
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -80,8 +86,11 @@ async function main() {
       errors.push(`[pageerror] ${e.message}`);
     });
     page.on('requestfailed', request => {
-      process.stderr.write(`[browser requestfailed] ${request.url()} ${request.failure().errorText}\n`);
-      errors.push(`[browser requestfailed] ${request.url()} ${request.failure().errorText}`);
+      const msg = `[browser requestfailed] ${request.url()} ${request.failure().errorText}`;
+      process.stderr.write(msg + '\n');
+      if (!request.url().includes('rum?') && !request.url().includes('cloudflareinsights.com')) {
+        errors.push(msg);
+      }
     });
 
     await page.goto(BASE + '/?v=' + Date.now(), { waitUntil: 'networkidle' });
