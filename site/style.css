@@ -313,6 +313,56 @@ button:disabled {
   color: #a32f2f;
 }
 
+/* ---------- paint ---------- */
+
+#paint {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  background: #fff;
+  padding: 8px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.paint-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #536174;
+}
+
+.paint-swatches {
+  display: flex;
+  gap: 8px;
+}
+
+.paint-swatch {
+  position: relative;
+  min-width: 34px !important;
+  min-height: 34px !important;
+  padding: 0 !important;
+  border-radius: 50% !important;
+  width: 34px !important;
+  height: 34px !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+.paint-swatch::after {
+  content: '';
+  display: block;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 3px solid #fff;
+  box-sizing: border-box;
+  pointer-events: none;
+}
+
+.paint-swatch[aria-pressed="true"] {
+  outline: 3px solid #1c7ed6;
+}
+
 /* ---------- first-minute tour ---------- */
 
 #tour {

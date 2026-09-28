@@ -39,6 +39,14 @@ const KINDS = {
   cone: { colour: 0xffd43b, label: 'cone' },
 };
 
+const PAINTS = {
+  coral: 0xff6b6b,
+  sky: 0x4dabf7,
+  leaf: 0x51cf66,
+  sun: 0xffd43b,
+  violet: 0xb197fc,
+};
+
 /*
   Mirror.
 
@@ -173,6 +181,7 @@ function load() {
       gz: clamp(gz, -BOARD, BOARD),
       level: clamp(level, 0, LEVEL_MAX),
       twin: int(s.twin),
+      paint: s.paint || null,
     });
   }
 
@@ -295,7 +304,7 @@ scene.add(shapeGroup);
 function makeMesh(s) {
   const mesh = new THREE.Mesh(
     geometryFor(s.kind, s.size),
-    new THREE.MeshLambertMaterial({ color: KINDS[s.kind].colour })
+    new THREE.MeshLambertMaterial({ color: s.paint ? PAINTS[s.paint] : KINDS[s.kind].colour })
   );
   mesh.castShadow = true;
   mesh.receiveShadow = true;
@@ -341,6 +350,8 @@ function syncScene() {
     } else if (mesh.geometry !== geometryFor(s.kind, s.size)) {
       mesh.geometry = geometryFor(s.kind, s.size);
       mesh.children[0].geometry = mesh.geometry;
+    } else if (mesh.material.color.getHex() !== (s.paint ? PAINTS[s.paint] : KINDS[s.kind].colour)) {
+      mesh.material.color.setHex(s.paint ? PAINTS[s.paint] : KINDS[s.kind].colour);
     }
     placeMesh(mesh, s);
     // A mirrored twin lights up with the shape you picked, because the next
@@ -415,7 +426,7 @@ function addShape(kind) {
   try {
     pushUndo();
     const { gx, gz } = freeCell(mirror);
-    const s = { id: nextId++, kind, size: SIZE_DEFAULT, gx, gz, level: 0, twin: null };
+    const s = { id: nextId++, kind, size: SIZE_DEFAULT, gx, gz, level: 0, twin: null, paint: null };
     shapes.push(s);
     selectedId = s.id;
     if (mirror) {
@@ -492,6 +503,18 @@ function toggleMirror() {
   if (!mirror) for (const s of shapes) s.twin = null;
   after(mirror ? 'Mirror on. New shapes come in twos.'
                : 'Mirror off. Every shape is on its own now.');
+}
+
+function paintSelected(name) {
+  const s = selected();
+  if (!s) return;
+  const newPaint = s.paint === name ? null : name;
+  if (newPaint === s.paint) return;
+  pushUndo();
+  s.paint = newPaint;
+  const t = twinOf(s);
+  if (t) t.paint = newPaint;
+  after(name ? `Painted ${name}!` : 'Unpainted!');
 }
 
 function undo() {
@@ -769,6 +792,7 @@ const els = {
   copy: document.getElementById('btn-copy'),
   clear: document.getElementById('btn-clear'),
   starterShelf: document.getElementById('starter-shelf'),
+  paint: document.getElementById('paint'),
 };
 
 /* A first visit gets four concrete gestures, not a mode or a lesson screen.
@@ -847,6 +871,12 @@ function setHint(text) {
       els.clear.disabled = shapes.length === 0;
       els.starterShelf.hidden = shapes.length !== 0;
       els.mirror.setAttribute('aria-pressed', String(mirror));
+      els.paint.hidden = !s;
+      if (s) {
+        for (const swatch of els.paint.querySelectorAll('.paint-swatch')) {
+          swatch.setAttribute('aria-pressed', String(s.paint === swatch.dataset.paint));
+        }
+      }
     } catch (err) {
       console.error('CRITICAL: updateUI crashed:', err);
       throw err;
@@ -857,6 +887,9 @@ window.duplicateSelected = duplicateSelected;
 
 for (const btn of document.querySelectorAll('#palette .shape')) {
   btn.addEventListener('click', () => addShape(btn.dataset.kind));
+}
+for (const swatch of els.paint.querySelectorAll('.paint-swatch')) {
+  swatch.addEventListener('click', () => paintSelected(swatch.dataset.paint));
 }
 els.bigger.addEventListener('click', () => resize(SIZE_STEP));
 els.smaller.addEventListener('click', () => resize(-SIZE_STEP));
@@ -934,12 +967,10 @@ function duplicateSelected() {
   } else {
     const id = nextId++;
     const newS = {
+      ...s,
       id,
-      kind: s.kind,
-      size: s.size,
       gx: best.gx,
       gz: best.gz,
-      level: s.level,
       twin: null,
     };
     shapes.push(newS);
@@ -1068,6 +1099,12 @@ window.__cad = {
       x: r.left + ((v.x + 1) / 2) * r.width,
       y: r.top + ((1 - v.y) / 2) * r.height,
     };
+  },
+  /** Returns the hex color of the shape with the given id. */
+  colour: (id) => {
+    const s = shapes.find((x) => x.id === id);
+    if (!s) return null;
+    return s.paint ? PAINTS[s.paint] : KINDS[s.kind].colour;
   },
   /** Screen position of a grid cell, taken at the height shape `forId` is
    *  currently being dragged through, which is the plane a drag follows. */
