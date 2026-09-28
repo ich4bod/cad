@@ -1,16 +1,3 @@
-/*
- * Clear, checked against the live Shape Maker in a real Chromium.
- *
- * The claim is narrow and testable: clear empties the plate, undo restores it, 
- * and reloading an empty document works and follows the design.
- *
- *   docker run --rm --ipc=host \
- *     -v /home/ichabod/apps/cad/tools:/tools:ro \
- *     -v /home/ichabod/apps/cad/.verify/node_modules:/w/node_modules:ro \
- *     -e NODE_PATH=/w/node_modules \
- *     mcr.microsoft.com/playwright:v1.55.0-noble \
- *     node /tools/verify-clear.js https://cad.ichabod-crane.net/
- */
 'use strict';
 
 let chromium;
@@ -18,7 +5,6 @@ try { chromium = require('playwright').chromium; }
 catch (e) { chromium = require('playwright-core').chromium; }
 
 const BASE = (process.argv[2] || 'https://cad.ichabod-crane.net/').replace(/\/$/, '');
-const OUT = process.env.OUT_DIR || '/proof';
 
 let passed = 0;
 const failures = [];
@@ -39,19 +25,7 @@ const hint = (page) => page.evaluate(() => document.getElementById('hint').textC
 const nextId = (page) => page.evaluate(() => window.__cad.stored().nextId);
 
 async function ready(page) {
-  try {
-    await page.waitForFunction(() => window.__cad && window.__cad.ready, null, { timeout: 30000 });
-  } catch (e) {
-    const status = await page.evaluate(() => {
-      return {
-        exists: typeof window.__cad !== 'undefined',
-        type: typeof window.__cad,
-        ready: typeof window.__cad !== 'undefined' ? window.__cad.ready : 'N/A'
-      };
-    });
-    console.error('window.__cad status:', JSON.stringify(status));
-    throw e;
-  }
+  await page.waitForFunction(() => window.__cad && window.__cad.ready, null, { timeout: 30000 });
   await sleep(250);
 }
 
@@ -94,27 +68,26 @@ async function main() {
   try {
     const errors = [];
 
-    /* ---------------------------------------------------- 1. build a document */
-
     const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
     
     let page = await ctx.newPage();
+    page.on('request', request => process.stderr.write(`[request] ${request.url()}\n`));
     page.on('console', (m) => {
-      if (['error', 'log', 'warning'].includes(m.type())) {
-        console.error(`[${m.type()}] ${m.text()}`);
-      }
+      process.stderr.write(`[browser ${m.type()}] ${m.text()}\n`);
     });
     page.on('pageerror', (e) => {
-      console.error(`[pageerror] ${e.message}`);
+      process.stderr.write(`[pageerror] ${e.message}\n${e.stack}\n`);
       errors.push(`[pageerror] ${e.message}`);
     });
     page.on('requestfailed', request => {
-      console.error(`[browser requestfailed] ${request.url()} ${request.failure().errorText}`);
+      process.stderr.write(`[browser requestfailed] ${request.url()} ${request.failure().errorText}\n`);
       errors.push(`[browser requestfailed] ${request.url()} ${request.failure().errorText}`);
     });
 
-    await page.goto(BASE + '/', { waitUntil: 'networkidle' });
+    await page.goto(BASE + '/?v=' + Date.now(), { waitUntil: 'networkidle' });
+
     await ready(page);
+
     await dismissTour(page);
 
     // Mirror on
