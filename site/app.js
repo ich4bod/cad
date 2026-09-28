@@ -725,16 +725,20 @@ function buildSTL() {
 
 function download() {
   if (!shapes.length) return;
+  const basename = els.modelName.value.trim().toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'shape-maker-model';
+  const filename = `${basename}.stl`;
   const blob = new Blob([buildSTL()], { type: 'model/stl' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'my-model.stl';
+  a.download = filename;
   document.body.appendChild(a);
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 20000);
-  setHint('Saved! Open my-model.stl in your printer app.');
+  setHint(`Saved! Open ${filename} in your printer app.`);
 }
 
 /* --------------------------------------------------------------------- UI */
@@ -747,6 +751,7 @@ const els = {
   undo: document.getElementById('btn-undo'),
   home: document.getElementById('btn-home'),
   save: document.getElementById('btn-download'),
+  modelName: document.getElementById('model-name'),
   saveHint: document.getElementById('save-hint'),
   bigger: document.getElementById('btn-bigger'),
   smaller: document.getElementById('btn-smaller'),
@@ -826,6 +831,7 @@ function setHint(text) {
       els.mirrorNote.hidden = !s || s.twin === null;
       els.undo.disabled = undoStack.length === 0;
       els.save.disabled = shapes.length === 0;
+      els.modelName.disabled = shapes.length === 0;
       els.saveHint.hidden = shapes.length === 0;
       els.copy.disabled = !s;
       els.bigger.disabled = !s || s.size >= SIZE_MAX;

@@ -109,6 +109,19 @@ html, body {
   gap: 10px;
 }
 
+#model-name {
+  width: 154px;
+  height: 44px;
+  padding: 0 11px;
+  color: var(--ink);
+  font: inherit;
+  background: #fffdf7;
+  border: 2px solid #c9d1dc;
+  border-radius: 8px;
+}
+
+#model-name:disabled { opacity: .55; }
+
 #save-hint {
   margin: 0;
   color: var(--ink-soft);
@@ -339,14 +352,5 @@ button:disabled {
     flex-basis: 100%;
     justify-content: flex-end;
   }
-}
-
-@media (max-width: 460px) {
-  #topbar {
-    flex-wrap: wrap;
-  }
-  #topactions {
-    flex-basis: 100%;
-    justify-content: flex-end;
-  }
+  #model-name { min-width: 0; flex: 1 1 140px; }
 }

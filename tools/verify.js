@@ -74,7 +74,7 @@ async function downloadSTL(page, name) {
     page.waitForEvent('download', { timeout: 20000 }),
     page.click('#btn-download'),
   ]);
-  check('download is named my-model.stl', dl.suggestedFilename() === 'my-model.stl',
+  check('download is named shape-maker-model.stl', dl.suggestedFilename() === 'shape-maker-model.stl',
     dl.suggestedFilename());
   const path = `${OUT}/${name}`;
   await dl.saveAs(path);
@@ -299,12 +299,14 @@ function assertSTL(bytes, expected, label) {
   const bytesB = await downloadSTL(page, 'snowman.stl');
   assertSTL(bytesB, expectedB, 'snowman');
 
-  // ---- no typing anywhere in the build flow ------------------------------
+  // ---- one optional name, one screen, no dialogs -------------------------
   console.log('');
-  console.log('DESIGN CONSTRAINTS — no typing, one screen, no dialogs');
+  console.log('DESIGN CONSTRAINTS — one optional name, one screen, no dialogs');
   const inputs = await page.evaluate(() =>
-    document.querySelectorAll('input, textarea, select, [contenteditable="true"]').length);
-  check('no text input anywhere in the build flow', inputs === 0, inputs + ' input elements');
+    [...document.querySelectorAll('input, textarea, select, [contenteditable="true"]')]
+      .map((input) => input.id));
+  check('only the optional model-name text input is present',
+    JSON.stringify(inputs) === JSON.stringify(['model-name']), inputs.join(',') || 'none');
   const buttons = await page.evaluate(() =>
     [...document.querySelectorAll('#app > :not(#tour) button')].map((b) => ({
       label: b.querySelector('span') ? b.querySelector('span').textContent.trim() : '',
