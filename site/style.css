@@ -60,6 +60,15 @@ html, body {
   white-space: nowrap;
 }
 
+#shape-count {
+  margin: 0;
+  flex: 0 0 auto;
+  color: var(--ink-soft);
+  font-size: 14px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
 #hint {
   margin: 0;
   flex: 1 1 auto;
@@ -289,6 +298,7 @@ button:disabled {
 
 @media (max-width: 720px) {
   #brand { display: none; }
+  #shape-count { font-size: 13px; }
   #hint { font-size: 14px; }
   #bottombar { gap: 8px 12px; padding: 10px; justify-content: center; }
   /* Once the bar wraps, the dashed rules separate nothing — each group is

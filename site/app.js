@@ -750,6 +750,7 @@ function download() {
 
 const els = {
   hint: document.getElementById('hint'),
+  shapeCount: document.getElementById('shape-count'),
   undo: document.getElementById('btn-undo'),
   home: document.getElementById('btn-home'),
   save: document.getElementById('btn-download'),
@@ -829,6 +830,7 @@ function setHint(text) {
       console.log('!!! DEBUG: shapes.length:', shapes.length);
       console.log('!!! DEBUG: clearBtn.disabled:', els.clear ? els.clear.disabled : 'N/A');
       console.log('!!! DEBUG: typeof clearBtn.disabled:', typeof els.clear ? els.clear.disabled : 'N/A');
+      els.shapeCount.textContent = `${shapes.length} ${shapes.length === 1 ? 'shape' : 'shapes'}`;
       els.undo.disabled = undoStack.length === 0;
       els.save.disabled = shapes.length === 0;
       els.saveHint.hidden = shapes.length === 0;
