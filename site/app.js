@@ -751,6 +751,7 @@ function download() {
 const els = {
   hint: document.getElementById('hint'),
   undo: document.getElementById('btn-undo'),
+  home: document.getElementById('btn-home'),
   save: document.getElementById('btn-download'),
   bigger: document.getElementById('btn-bigger'),
   smaller: document.getElementById('btn-smaller'),
@@ -857,6 +858,7 @@ els.del.addEventListener('click', removeSelected);
 els.mirror.addEventListener('click', toggleMirror);
 els.clear.addEventListener('click', clearAll);
 els.undo.addEventListener('click', undo);
+els.home.addEventListener('click', resetView);
 els.save.addEventListener('click', download);
 els.copy.addEventListener('click', duplicateSelected);
 
@@ -967,9 +969,15 @@ function rotateView(horizontal, vertical) {
 }
 
 function resetView() {
+  // OrbitControls keeps a damping delta after a drag. Empty it before setting
+  // the saved vectors, otherwise its next update nudges the home view away.
+  const damping = controls.enableDamping;
+  controls.enableDamping = false;
+  controls.update();
   camera.position.copy(initialCamera);
   controls.target.copy(initialTarget);
   controls.update();
+  controls.enableDamping = damping;
   setHint('View reset.');
 }
 
