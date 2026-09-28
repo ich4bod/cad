@@ -1040,7 +1040,7 @@ if (saved) {
   restore(saved);
   syncScene();
   if (saved.shapes.length) {
-    setHint('Here it is, just how you left it.');
+    setHint('Your saved shape is back on the plate.');
   } else {
     setHint('Clean plate. Tap a shape to start.');
   }
