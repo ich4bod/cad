@@ -820,7 +820,7 @@ function setHint(text) {
       const s = selected();
       els.shapeCount.textContent = `${shapes.length} ${shapes.length === 1 ? 'shape' : 'shapes'}`;
       els.selectedReadout.textContent = s
-        ? `${KINDS[s.kind].label[0].toUpperCase()}${KINDS[s.kind].label.slice(1)} · ${s.size}mm · level ${s.level}`
+        ? `${KINDS[s.kind].label[0].toUpperCase()}${KINDS[s.kind].label.slice(1)} · ${s.size}mm · level ${s.level} · grid (${s.gx}, ${s.gz})`
         : 'No shape selected';
       els.undo.disabled = undoStack.length === 0;
       els.save.disabled = shapes.length === 0;

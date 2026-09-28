@@ -23,6 +23,18 @@ async function readout(page) {
   return page.locator('#selected-readout').textContent();
 }
 
+async function dragMouse(page, from, to, steps = 12) {
+  await page.mouse.move(from.x, from.y);
+  await page.mouse.down();
+  for (let i = 1; i <= steps; i++) {
+    await page.mouse.move(
+      from.x + ((to.x - from.x) * i) / steps,
+      from.y + ((to.y - from.y) * i) / steps
+    );
+  }
+  await page.mouse.up();
+}
+
 async function main() {
   const browser = await chromium.launch({ args: ['--no-sandbox'] });
   try {
@@ -38,15 +50,27 @@ async function main() {
 
     check(await readout(page), 'No shape selected', 'empty model');
     await page.click('#palette .shape[data-kind="cube"]');
+    check(await readout(page), 'Block · 30mm · level 0 · grid (0, 0)', 'added Block');
+
+    const blockId = await page.evaluate(() => window.__cad.selectedId());
+    const from = await page.evaluate((id) => window.__cad.screenOf(id), blockId);
+    const to = await page.evaluate((id) => window.__cad.screenOfCell(4, 2, id), blockId);
+    await dragMouse(page, from, to);
+    const dragged = await page.evaluate(() => {
+      const s = window.__cad.shapes().find((shape) => shape.id === window.__cad.selectedId());
+      return { gx: s.gx, gz: s.gz, readout: document.querySelector('#selected-readout').textContent };
+    });
+    check(dragged.readout, `Block · 30mm · level 0 · grid (${dragged.gx}, ${dragged.gz})`, 'dragged Block grid location');
+
     await page.click('#btn-bigger');
     await page.click('#btn-up');
-    check(await readout(page), 'Block · 40mm · level 1', 'edited Block');
+    check(await readout(page), `Block · 40mm · level 1 · grid (${dragged.gx}, ${dragged.gz})`, 'edited Block');
 
     await page.click('#btn-delete');
     check(await readout(page), 'No shape selected', 'deleted Block');
     check(await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth), false, 'no horizontal overflow at 390x844');
 
-    console.log('selected shape readout verified through edit and delete');
+    console.log('selected shape readout verifies live grid location');
   } finally {
     await browser.close();
   }
