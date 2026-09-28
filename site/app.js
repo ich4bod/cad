@@ -429,12 +429,13 @@ function addShape(kind) {
     const s = { id: nextId++, kind, size: SIZE_DEFAULT, gx, gz, level: 0, twin: null, paint: null };
     shapes.push(s);
     selectedId = s.id;
+    console.warn('DEBUG: addShape', { id: s.id });
     if (mirror) {
       const t = { ...s, id: nextId++, gx: -gx, twin: s.id };
       s.twin = t.id;
       shapes.push(t);
+      console.warn('DEBUG: addShape (mirror)', { s, t, shapes });
     }
-
     after(mirror ? `Two ${KINDS[kind].label}s! Drag one and both move.`
                  : `A ${KINDS[kind].label}! Drag it to move it.`);
   } catch (err) {
@@ -460,16 +461,21 @@ function lift(delta) {
   if (!s) return;
   const level = Math.min(LEVEL_MAX, Math.max(0, s.level + delta));
   if (level === s.level) return;
+  console.log('Lifting level from', s.level, 'to', level);
   pushUndo();
   s.level = level;
   const t = twinOf(s);
-  if (t) t.level = level;
+  if (t) {
+    t.level = level;
+    console.log('Lifting twin (id:', t.id, ') level to', t.level);
+  }
   after(delta > 0 ? 'Up it goes.' : 'Back down.');
 }
 
 function toPlate() {
   const s = selected();
   if (!s || s.level === 0) return;
+  console.log('DEBUG: toPlate', { id: s.id, level: s.level });
   pushUndo();
   s.level = 0;
   const t = twinOf(s);
@@ -510,7 +516,28 @@ function clearAll() {
 function toggleMirror() {
   pushUndo();
   mirror = !mirror;
-  if (!mirror) for (const s of shapes) s.twin = null;
+  console.warn('DEBUG: toggleMirror status:', mirror);
+  console.warn('DEBUG: shapes before toggle:', JSON.stringify(shapes.map(s => ({id: s.id, twin: s.twin}))));
+  if (mirror) {
+    for (const s of shapes) {
+      if (s.twin === null) {
+        console.warn('DEBUG: twinning shape', s.id);
+        const t = {
+          ...s,
+          id: nextId++,
+          gx: -s.gx,
+          gz: s.gz,
+          twin: s.id,
+        };
+        s.twin = t.id;
+        shapes.push(t);
+      }
+    }
+  } else {
+    console.warn('DEBUG: untwinning all');
+    for (const s of shapes) s.twin = null;
+  }
+  console.warn('DEBUG: shapes after toggle:', JSON.stringify(shapes.map(s => ({id: s.id, twin: s.twin}))));
   after(mirror ? 'Mirror on. New shapes come in twos.'
                : 'Mirror off. Every shape is on its own now.');
 }
@@ -860,6 +887,7 @@ function setHint(text) {
   function updateUI() {
     try {
       const s = selected();
+      console.log('DEBUG: updateUI', { selectedId, s: s ? { level: s.level, id: s.id } : null });
       els.shapeCount.textContent = `${shapes.length} ${shapes.length === 1 ? 'shape' : 'shapes'}`;
       els.selectedReadout.textContent = s
         ? `${KINDS[s.kind].label[0].toUpperCase()}${KINDS[s.kind].label.slice(1)} · ${s.size}mm · level ${s.level} · grid (${s.gx}, ${s.gz})`

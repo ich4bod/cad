@@ -3,3 +3,4 @@
 # tools/verify.js.
 .verify/
 proof/
+node_modules/
