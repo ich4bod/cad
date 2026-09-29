@@ -39,7 +39,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     if (fresh.length !== 2 || fresh.some(s => s.level !== 4) || fresh[0].twin !== fresh[1].id || fresh[1].twin !== fresh[0].id) throw new Error('pair stack records wrong');
     for (const p of pair) { const n = fresh.find(x => x.gx === p.gx && x.gz === p.gz); if (!n) throw new Error('pair stack position wrong'); }
     await page.reload({ waitUntil: 'domcontentloaded' }); await page.waitForFunction(() => window.__cad?.ready);
-    if ((await state()).shapes.length !== 5) throw new Error('stack persistence failed');
+    if ((await state()).shapes.length !== 5) throw new Error(`stack persistence failed: ${(await state()).shapes.length}`);
     const stl = await page.evaluate(() => window.__cad.stl());
     if (!stl.length || !stl[0].startsWith('solid')) throw new Error('STL validation failed');
     await page.evaluate(() => localStorage.clear()); await page.reload({ waitUntil: 'domcontentloaded' }); await page.waitForFunction(() => window.__cad?.ready);
