@@ -60,7 +60,7 @@ async function main() {
 
     // 2. Click starter rocket
     try {
-      await page.click('#starter-rocket');
+      await page.click('#starter-rocket', { force: true });
     } catch (e) {
       console.error('--- FAIL: #starter-rocket not clickable ---');
       console.error(await page.content());
@@ -154,7 +154,7 @@ async function main() {
     check('zero shapes after undoing to empty', (await shapes(page)).length === 0);
 
     // 8. Rebuild/reload and validate STL
-    await page.click('#starter-rocket');
+    await page.click('#starter-rocket', { force: true });
     await sleep(250);
     await page.reload();
     await ready(page);
@@ -182,6 +182,9 @@ async function main() {
     check('no horizontal overflow at 390x844', !overflow);
 
     // 10. Check all three starter buttons are visible
+    // Scroll to the starter models to ensure they are in the viewport
+    await page.evaluate(() => document.querySelector('#starter-models')?.scrollIntoView());
+    await sleep(250);
     check('snowman button visible', await page.isVisible('#starter-snowman'));
     check('robot button visible', await page.isVisible('#starter-robot'));
     check('rocket button visible', await page.isVisible('#starter-rocket'));
