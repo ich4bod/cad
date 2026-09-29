@@ -34,13 +34,19 @@ async function reset(page) {
 }
 
 async function dragToCell(page, id, gx, gz) {
-  const from = await page.evaluate((shapeId) => window.__cad.screenOf(shapeId), id);
-  const to = await page.evaluate(({ shapeId, x, z }) => window.__cad.screenOfCell(x, z, shapeId), { shapeId: id, x: gx, z: gz });
-  await page.mouse.move(from.x, from.y);
-  await page.mouse.down();
-  await page.mouse.move(to.x, to.y, { steps: 14 });
-  await page.mouse.up();
-  await sleep(140);
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const current = await page.evaluate((shapeId) => window.__cad.shapes().find((s) => s.id === shapeId), id);
+    if (current && current.gx === gx && current.gz === gz) return;
+    const from = await page.evaluate((shapeId) => window.__cad.screenOf(shapeId), id);
+    const to = await page.evaluate(({ shapeId, x, z }) => window.__cad.screenOfCell(x, z, shapeId), { shapeId: id, x: gx, z: gz });
+    await page.mouse.move(from.x, from.y);
+    await page.mouse.down();
+    await page.mouse.move(to.x, to.y, { steps: 14 });
+    await page.mouse.up();
+    await sleep(180);
+  }
+  const actual = await page.evaluate((shapeId) => window.__cad.shapes().find((s) => s.id === shapeId), id);
+  if (!actual || actual.gx !== gx || actual.gz !== gz) throw new Error(`drag missed target (${gx},${gz}): ${JSON.stringify(actual)}`);
 }
 
 async function click(page, selector, count = 1) {
