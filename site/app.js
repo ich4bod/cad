@@ -609,6 +609,17 @@ function unpairSelected() {
   after('These two pieces now move on their own.');
 }
 
+function reshapeSelected(kind) {
+  const s = selected();
+  if (!s || !KINDS[kind] || s.kind === kind) return;
+  pushUndo();
+  s.kind = kind;
+  const t = twinOf(s);
+  if (t) t.kind = kind;
+  const label = KINDS[kind].label;
+  after(`Now it’s a ${label[0].toUpperCase()}${label.slice(1)}.`);
+}
+
 function paintSelected(name) {
   const s = selected();
   if (!s) return;
@@ -947,6 +958,7 @@ const els = {
   clear: document.getElementById('btn-clear'),
   starterShelf: document.getElementById('starter-shelf'),
   paint: document.getElementById('paint'),
+  reshape: document.getElementById('reshape'),
   starterModels: document.getElementById('starter-models'),
   starterSnowman: document.getElementById('starter-snowman'),
   starterRobot: document.getElementById('starter-robot'),
@@ -1039,6 +1051,10 @@ function setHint(text) {
       els.starterModels.hidden = shapes.length !== 0;
       els.mirror.setAttribute('aria-pressed', String(mirror));
       els.paint.hidden = !s;
+      els.reshape.hidden = !s;
+      for (const button of els.reshape.querySelectorAll('.reshape-kind')) {
+        button.setAttribute('aria-pressed', String(!!s && s.kind === button.dataset.kind));
+      }
       if (s) {
         for (const swatch of els.paint.querySelectorAll('.paint-swatch')) {
           swatch.setAttribute('aria-pressed', String(s.paint === swatch.dataset.paint));
@@ -1057,6 +1073,9 @@ for (const btn of document.querySelectorAll('#palette .shape')) {
 }
 for (const swatch of els.paint.querySelectorAll('.paint-swatch')) {
   swatch.addEventListener('click', () => paintSelected(swatch.dataset.paint));
+}
+for (const button of els.reshape.querySelectorAll('.reshape-kind')) {
+  button.addEventListener('click', () => reshapeSelected(button.dataset.kind));
 }
 els.bigger.addEventListener('click', () => resize(SIZE_STEP));
 els.smaller.addEventListener('click', () => resize(-SIZE_STEP));
@@ -1341,6 +1360,7 @@ window.addShape = addShape;
 window.duplicateSelected = duplicateSelected;
 window.updateUI = updateUI;
 window.paintSelected = paintSelected;
+window.reshapeSelected = reshapeSelected;
 window.selectShapeBy = selectShapeBy;
 window.undo = undo;
 window.selectShapeById = (id) => { selectedId = id; syncScene(); updateUI(); };
