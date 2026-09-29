@@ -26,7 +26,7 @@ async function main() {
       }
     }
 
-    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
     let page = await ctx.newPage();
     page.on('console', (m) => {
       process.stderr.write(`[browser ${m.type()}] ${m.text()}\n`);
@@ -46,61 +46,67 @@ async function main() {
     await page.goto(BASE, { waitUntil: 'networkidle' });
 
     const ready = (page) => page.waitForFunction(() => window.__cad && window.__cad.ready, null, { timeout: 30000 });
-    const dismissTour = (page) => page.isVisible('#tour').then(v => v && page.click('#tour-skip', { force: true }));
-
+    
     await ready(page);
-    await dismissTour(page);
 
-    // 1. Assert exactly one #backlink
-    const linkCount = await page.evaluate(() => document.querySelectorAll('#backlink').length);
-    process.stderr.write('  DEBUG: linkCount is ' + linkCount + '\n');
-    check('exactly one #backlink', linkCount === 1);
+    // 1. Load at 390x844
+    await page.setViewportSize({ width: 390, height: 844 });
+    await sleep(100);
 
-    // 2. Assert #tour and #starter-models are not descendants of it
-    const descendantsCheck = await page.evaluate(() => {
-      const link = document.querySelector('#backlink');
-      if (!link) return false;
-      return link.querySelector('#tour') !== null || link.querySelector('#starter-models') !== null;
+    // 2. Assert exactly one #backlink
+    const backlinkCount = await page.evaluate(() => document.querySelectorAll('#backlink').length);
+    check('exactly one #backlink', backlinkCount === 1);
+
+    // 3. Assert #tour and #starter-models are not descendants of #backlink
+    const invalidDescendants = await page.evaluate(() => {
+      const backlink = document.querySelector('#backlink');
+      if (!backlink) return false;
+      const tour = document.querySelector('#tour');
+      const starterModels = document.querySelector('#starter-models');
+      const tourInBacklink = tour && backlink.contains(tour);
+      const starterModelsInBacklink = starterModels && backlink.contains(starterModels);
+      return tourInBacklink || starterModelsInBacklink;
     });
-    check('#tour and #starter-models are not descendants of #backlink', !descendantsCheck);
+    check('#tour and #starter-models are not descendants of #backlink', !invalidDescendants);
 
-    // 3. Click Skip and assert the URL remains the CAD URL
-    if (await page.isVisible('#tour-skip')) {
-        await page.click('#tour-skip', { force: true });
-        await sleep(250);
+    // 4. Click Skip and assert the URL remains the CAD URL
+    // First check if tour is visible
+    const tourVisible = await page.isVisible('#tour');
+    if (tourVisible) {
+      await page.click('#tour-skip', { force: true });
+      await sleep(250);
     }
     const currentUrl = page.url();
-    check('URL remains the CAD URL after skip', currentUrl.startsWith(BASE));
+    check('URL remains CAD URL after skip', currentUrl === BASE || currentUrl.startsWith(BASE + '/'));
 
-    // 4. Clear stored document state without clearing the completed-tour key
+    // 5. Clear stored document state without clearing the completed-tour key
     await page.evaluate(() => {
       window.localStorage.removeItem('shape-maker/doc/v1');
     });
-    
-    // 5. Reload
+    await sleep(250);
+
+    // 6. Reload, assert all three starter buttons are visible
     await page.reload({ waitUntil: 'networkidle' });
     await ready(page);
-
-    // 6. Assert all three starter buttons are visible
-    // Scroll to the starter models to ensure they are in the viewport
-    await page.evaluate(() => document.querySelector('#starter-models')?.scrollIntoView());
-    await sleep(250);
-    const snowmanVisible = await page.isVisible('#starter-snowman');
-    const robotVisible = await page.isVisible('#starter-robot');
-    const rocketVisible = await page.isVisible('#starter-rocket');
-    check('all three starter buttons visible after reload', snowmanVisible && robotVisible && rocketVisible);
+    
+    const snowmanBtn = await page.isVisible('#starter-snowman');
+    const robotBtn = await page.isVisible('#starter-robot');
+    const rocketBtn = await page.isVisible('#starter-rocket');
+    check('all three starter buttons are visible', snowmanBtn && robotBtn && rocketBtn);
 
     // 7. Click Rocket
-    await page.evaluate(() => document.querySelector('#starter-rocket')?.click());
-    await sleep(250);
+    await page.click('#starter-rocket');
+    await sleep(500); // Wait for build to happen
 
-    // 8. Undo and assert URL remains CAD URL and starter tray returns
+    // 8. Undo and assert the URL remains the CAD URL and the starter tray returns
     await page.click('#btn-undo');
-    await sleep(250);
-    const afterUndoUrl = page.url();
-    const trayVisible = await page.isVisible('#starter-models');
-    check('URL remains the CAD URL after undo', afterUndoUrl.startsWith(BASE));
-    check('starter tray returns after undo', trayVisible);
+    await sleep(500);
+    
+    const urlAfterUndo = page.url();
+    check('URL remains CAD URL after undo', urlAfterUndo === BASE || urlAfterUndo.startsWith(BASE + '/'));
+
+    const starterModelsVisible = await page.isVisible('#starter-models');
+    check('starter tray returns', starterModelsVisible);
 
     if (failures.length || errors.length) {
       for (const f of failures) console.error('  FAILED: ' + f);
