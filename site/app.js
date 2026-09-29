@@ -384,6 +384,20 @@ const footprint = (size, gx, gz) => [
 const overlaps = (a, b, gap) =>
   a[0] < b[1] + gap && b[0] < a[1] + gap && a[2] < b[3] + gap && b[2] < a[3] + gap;
 
+function landingLevel(s) {
+  const bottom = s.level * GRID;
+  const selectedFootprint = footprint(s.size, s.gx, s.gz);
+  let landingHeight = 0;
+  for (const other of shapes) {
+    if (other.id === s.id) continue;
+    const top = other.level * GRID + other.size;
+    if (top <= bottom && overlaps(selectedFootprint, footprint(other.size, other.gx, other.gz), 0)) {
+      landingHeight = Math.max(landingHeight, top);
+    }
+  }
+  return landingHeight / GRID;
+}
+
 /*
   Where a new shape lands.
 
@@ -518,6 +532,16 @@ function toPlate() {
   const t = twinOf(s);
   if (t) t.level = 0;
   after('Back on the plate.');
+}
+
+function dropSelected() {
+  const s = selected();
+  if (!s || twinOf(s)) return;
+  const level = landingLevel(s);
+  if (level === s.level) return;
+  pushUndo();
+  s.level = level;
+  after(level > 0 ? 'Dropped onto a piece below.' : 'Dropped onto the plate.');
 }
 
 function centerSelected() {
@@ -918,6 +942,7 @@ const els = {
   tourNext: document.getElementById('tour-next'),
   copy: document.getElementById('btn-copy'),
   stackCopy: document.getElementById('btn-stack-copy'),
+  drop: document.getElementById('btn-drop'),
   unpair: document.getElementById('btn-unpair'),
   clear: document.getElementById('btn-clear'),
   starterShelf: document.getElementById('starter-shelf'),
@@ -1000,6 +1025,7 @@ function setHint(text) {
       els.copy.disabled = !s;
       const stackLevel = s ? s.level + s.size / GRID : 0;
       els.stackCopy.disabled = !s || stackLevel > LEVEL_MAX;
+      els.drop.disabled = !s || !!twinOf(s) || landingLevel(s) === s.level;
       els.unpair.disabled = !s || !twinOf(s);
       els.bigger.disabled = !s || s.size >= SIZE_MAX;
       els.smaller.disabled = !s || s.size <= SIZE_MIN;
@@ -1047,6 +1073,7 @@ els.home.addEventListener('click', resetView);
 els.save.addEventListener('click', download);
 els.copy.addEventListener('click', duplicateSelected);
 els.stackCopy.addEventListener('click', stackCopy);
+els.drop.addEventListener('click', dropSelected);
 els.unpair.addEventListener('click', unpairSelected);
 els.plate.addEventListener('click', toPlate);
 els.center.addEventListener('click', centerSelected);
