@@ -444,8 +444,8 @@ function buildRobot() {
   pushUndo();
   const s1 = { id: nextId++, kind: 'cube', size: 50, gx: 0, gz: 0, level: 0, twin: null, paint: null };
   const s2 = { id: nextId++, kind: 'cube', size: 30, gx: 0, gz: 0, level: 5, twin: null, paint: null };
-  const s3 = { id: nextId++, kind: 'tube', size: 20, gx: -300, gz: 0, level: 1, twin: null, paint: null };
-  const s4 = { id: nextId++, kind: 'tube', size: 20, gx: 300, gz: 0, level: 1, twin: s3.id, paint: null };
+  const s3 = { id: nextId++, kind: 'tube', size: 20, gx: -3, gz: 0, level: 1, twin: null, paint: null };
+  const s4 = { id: nextId++, kind: 'tube', size: 20, gx: 3, gz: 0, level: 1, twin: s3.id, paint: null };
   s3.twin = s4.id;
   shapes.push(s1, s2, s3, s4);
   selectedId = s3.id;
@@ -624,7 +624,19 @@ function pickShape(e) {
   } else {
     console.log('pickShape: no hits');
   }
-  return hits.length ? hits[0] : null;
+  if (hits.length === 0) return null;
+
+  // Heuristic: if multiple shapes are hit (e.g. a shape is partially inside another),
+  // pick the one with the smallest bounding box volume. This helps picking out
+  // small, partially obscured shapes like arms.
+  return hits.reduce((best, current) => {
+    const getVol = (obj) => {
+      if (!obj.geometry.boundingBox) obj.geometry.computeBoundingBox();
+      const b = obj.geometry.boundingBox;
+      return (b.max.x - b.min.x) * (b.max.y - b.min.y) * (b.max.z - b.min.z);
+    };
+    return getVol(current.object) < getVol(best.object) ? current : best;
+  }, hits[0]);
 }
 
 /*
@@ -690,16 +702,12 @@ window.addEventListener('pointermove', (e) => {
   setPointer(e);
   raycaster.setFromCamera(pointer, camera);
   console.log("DEBUG: reached pointermove");
-  const mousePos = new THREE.Vector3();
-  raycaster.ray.intersectPlane(dragPlane, mousePos);
-  console.log(`mouse world pos: ${mousePos.x.toFixed(2)}, ${mousePos.y.toFixed(2)}, ${mousePos.z.toFixed(2)}`);
+  const currentMousePos = new THREE.Vector3();
+  raycaster.ray.intersectPlane(dragPlane, currentMousePos);
+  console.log(`mouse world pos: ${currentMousePos.x.toFixed(2)}, ${currentMousePos.y.toFixed(2)}, ${currentMousePos.z.toFixed(2)}`);
 
-  const mousePos = new THREE.Vector3();
-  raycaster.ray.intersectPlane(dragPlane, mousePos);
-  console.log(`mouse world pos: ${mousePos.x.toFixed(2)}, ${mousePos.y.toFixed(2)}, ${mousePos.z.toFixed(2)}`);
-
-  let gx = clamp(Math.round((hitPoint.x - drag.offX) / GRID), -BOARD, BOARD);
-  const gz = clamp(Math.round((hitPoint.z - drag.offZ) / GRID), -BOARD, BOARD);
+  let gx = clamp(Math.round((currentMousePos.x - drag.offX) / GRID), -BOARD, BOARD);
+  const gz = clamp(Math.round((currentMousePos.z - drag.offZ) / GRID), -BOARD, BOARD);
 
   // A twinned shape cannot rest on the centre line: its twin would be inside
   // it, and the pair would look like one shape and export as two. So the
