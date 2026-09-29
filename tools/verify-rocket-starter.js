@@ -184,10 +184,24 @@ async function main() {
     // 10. Check all three starter buttons are visible
     // Scroll to the starter models to ensure they are in the viewport
     await page.evaluate(() => document.querySelector('#starter-models')?.scrollIntoView());
-    await sleep(250);
-    check('snowman button visible', await page.isVisible('#starter-snowman'));
-    check('robot button visible', await page.isVisible('#starter-robot'));
-    check('rocket button visible', await page.isVisible('#starter-rocket'));
+    await sleep(500);
+    const snowmanVisible = await page.isVisible('#starter-snowman');
+    const robotVisible = await page.isVisible('#starter-robot');
+    const rocketVisible = await page.isVisible('#starter-rocket');
+    
+    if (!snowmanVisible || !robotVisible || !rocketVisible) {
+      const rect = await page.evaluate(() => {
+        const el = document.querySelector('#starter-models');
+        if (!el) return null;
+        const r = el.getBoundingClientRect();
+        return { top: r.top, bottom: r.bottom, height: r.height };
+      });
+      console.log(`DEBUG: starter-models rect: ${JSON.stringify(rect)}`);
+    }
+
+    check('snowman button visible', snowmanVisible);
+    check('robot button visible', robotVisible);
+    check('rocket button visible', rocketVisible);
 
     if (failures.length || errors.length) {
       for (const f of failures) console.error('  FAILED: ' + f);
