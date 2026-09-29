@@ -1,0 +1,57 @@
+'use strict';
+let chromium;
+try { chromium = require('playwright').chromium; } catch (e) { chromium = require('playwright-core').chromium; }
+const BASE = (process.argv[2] || 'https://cad.ichabod-crane.net/').replace(/\/$/, '');
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const sameGeometry = (a, b) => JSON.stringify(a.map(({ id, twin, ...x }) => ({ ...x, id }))) === JSON.stringify(b.map(({ id, twin, ...x }) => ({ ...x, id })));
+(async () => {
+  const browser = await chromium.launch({ args: ['--no-sandbox'] });
+  try {
+    const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+    await context.addInitScript(() => localStorage.clear());
+    const page = await context.newPage();
+    const errors = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+    await page.goto(BASE, { waitUntil: 'networkidle', timeout: 45000 });
+    await page.waitForFunction(() => window.__cad?.ready, { timeout: 20000 });
+    if (await page.isVisible('#tour')) await page.click('#tour-skip', { force: true });
+    const state = () => page.evaluate(() => ({ shapes: window.__cad.shapes(), selected: window.__cad.selectedId(), mirror: window.__cad.mirror(), undo: window.__cad.undoDepth() }));
+    const add = async (kind) => { await page.click(`#palette .shape[data-kind="${kind}"]`); await sleep(120); };
+    const choose = async (id) => { const p = await page.evaluate((i) => window.__cad.screenOf(i), id); await page.mouse.click(p.x, p.y); await sleep(120); };
+    await page.click('#btn-mirror');
+    await add('cube');
+    await add('ball');
+    let before = await state();
+    if (!before.mirror || before.shapes.length !== 4) throw new Error('mirror setup failed');
+    const first = before.shapes[0], firstTwin = before.shapes[1], second = before.shapes[2], secondTwin = before.shapes[3];
+    const original = before.shapes.map((s) => ({ ...s }));
+    await choose(first.id);
+    if (await page.isDisabled('#btn-unpair')) throw new Error('Unpair disabled for live pair');
+    await page.click('#btn-unpair');
+    let after = await state();
+    if (after.shapes.find((s) => s.id === first.id).twin !== null || after.shapes.find((s) => s.id === firstTwin.id).twin !== null) throw new Error('selected pair remained linked');
+    if (after.shapes.find((s) => s.id === second.id).twin !== secondTwin.id || after.shapes.find((s) => s.id === secondTwin.id).twin !== second.id) throw new Error('other pair changed');
+    if (!sameGeometry(original, after.shapes)) throw new Error('geometry or paint changed');
+    if (!after.mirror || await page.getAttribute('#btn-mirror', 'aria-pressed') !== 'true') throw new Error('Mirror changed');
+    if (!(await page.locator('#hint').textContent()).includes('These two pieces now move on their own.')) throw new Error('missing unpair message');
+    if (await page.isDisabled('#btn-unpair') === false) throw new Error('Unpair stayed enabled after unlink');
+    await page.click('#btn-undo');
+    let restored = await state();
+    if (restored.shapes.find((s) => s.id === first.id).twin !== firstTwin.id || restored.shapes.find((s) => s.id === firstTwin.id).twin !== first.id) throw new Error('Undo did not restore only first pair');
+    if (restored.shapes.find((s) => s.id === second.id).twin !== secondTwin.id) throw new Error('Undo changed other pair');
+    await page.click('#btn-unpair');
+    await add('tube');
+    const added = await state();
+    const newest = added.shapes.slice(-2);
+    if (!added.mirror || newest.length !== 2 || newest[0].twin !== newest[1].id || newest[1].twin !== newest[0].id) throw new Error('new shape was not paired after Unpair');
+    await choose(newest[0].id);
+    await page.click('#btn-mirror');
+    await add('cone');
+    const single = await state();
+    const cone = single.shapes[single.shapes.length - 1];
+    await choose(cone.id);
+    if (await page.isDisabled('#btn-unpair') === false) throw new Error('Unpair enabled for single shape');
+    if (errors.length) throw new Error(errors.join(' | '));
+    process.stdout.write('selected-pair unlink verified without changing Mirror or other pairs\n');
+  } finally { await browser.close(); }
+})().catch((e) => { console.error(e.stack || e); process.exit(1); });

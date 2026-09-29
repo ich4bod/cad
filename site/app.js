@@ -575,6 +575,16 @@ function toggleMirror() {
                : 'Mirror off. Every shape is on its own now.');
 }
 
+function unpairSelected() {
+  const s = selected();
+  const t = twinOf(s);
+  if (!t) return;
+  pushUndo();
+  s.twin = null;
+  t.twin = null;
+  after('These two pieces now move on their own.');
+}
+
 function paintSelected(name) {
   const s = selected();
   if (!s) return;
@@ -907,6 +917,7 @@ const els = {
   tourSkip: document.getElementById('tour-skip'),
   tourNext: document.getElementById('tour-next'),
   copy: document.getElementById('btn-copy'),
+  unpair: document.getElementById('btn-unpair'),
   clear: document.getElementById('btn-clear'),
   starterShelf: document.getElementById('starter-shelf'),
   paint: document.getElementById('paint'),
@@ -986,6 +997,7 @@ function setHint(text) {
         ? 'Ready to print: 1 shape'
         : `Ready to print: ${shapes.length} shapes`;
       els.copy.disabled = !s;
+      els.unpair.disabled = !s || !twinOf(s);
       els.bigger.disabled = !s || s.size >= SIZE_MAX;
       els.smaller.disabled = !s || s.size <= SIZE_MIN;
       els.up.disabled = !s || s.level >= LEVEL_MAX;
@@ -1031,6 +1043,7 @@ els.undo.addEventListener('click', undo);
 els.home.addEventListener('click', resetView);
 els.save.addEventListener('click', download);
 els.copy.addEventListener('click', duplicateSelected);
+els.unpair.addEventListener('click', unpairSelected);
 els.plate.addEventListener('click', toPlate);
 els.center.addEventListener('click', centerSelected);
 els.previousShape.addEventListener('click', () => selectShapeBy(-1));
