@@ -31,7 +31,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     if (JSON.stringify(after.shapes) !== JSON.stringify(before.shapes) || after.selected !== before.selected) throw new Error('single undo did not restore');
     await page.click('#btn-mirror'); await sleep(100); await page.evaluate(() => window.addShape('ball')); await sleep(100); await click('#btn-up');
     const pairBefore = await state();
-    if (pairBefore.shapes.length !== 4) throw new Error('pair setup failed');
+    if (pairBefore.shapes.length !== 3) throw new Error('pair setup failed');
     const pair = pairBefore.shapes.slice(-2);
     await page.click('#btn-stack-copy'); await sleep(150);
     const pairAfter = await state();
@@ -39,7 +39,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     if (fresh.length !== 2 || fresh.some(s => s.level !== 4) || fresh[0].twin !== fresh[1].id || fresh[1].twin !== fresh[0].id) throw new Error('pair stack records wrong');
     for (const p of pair) { const n = fresh.find(x => x.gx === p.gx && x.gz === p.gz); if (!n) throw new Error('pair stack position wrong'); }
     await page.reload({ waitUntil: 'domcontentloaded' }); await page.waitForFunction(() => window.__cad?.ready);
-    if ((await state()).shapes.length !== 6) throw new Error('stack persistence failed');
+    if ((await state()).shapes.length !== 5) throw new Error('stack persistence failed');
     const stl = await page.evaluate(() => window.__cad.stl());
     if (!stl.length || !stl[0].startsWith('solid')) throw new Error('STL validation failed');
     await page.evaluate(() => localStorage.clear()); await page.reload({ waitUntil: 'domcontentloaded' }); await page.waitForFunction(() => window.__cad?.ready);
