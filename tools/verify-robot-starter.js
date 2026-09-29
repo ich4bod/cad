@@ -128,17 +128,24 @@ async function main() {
     check('left arm moved', s3M.gx !== -3);
     check('right arm moved (twin)', s4M.gx === -s3M.gx);
 
-    // 7. Undo edits (undo the move and paint)
-    await page.click('#btn-undo');
+    // 7. Undo edits (undo the move, then the paint, then the build)
+    await page.click('#btn-undo'); // undo move
     await sleep(250);
     const sListUndone = await shapes(page);
     const s3U = sListUndone.find(s => s.id === s3.id);
     const s4U = sListUndone.find(s => s.id === s4.id);
     check('left arm back to original pos', s3U.gx === -3 && s3U.gz === 0);
-    check('left arm color restored', s3U.paint === null);
+    check('left arm color restored', s3U.paint === 'violet');
+
+    await page.click('#btn-undo'); // undo paint
+    await sleep(250);
+    const sListUndone2 = await shapes(page);
+    const s3U2 = sListUndone2.find(s => s.id === s3.id);
+    const s4U2 = sListUndone2.find(s => s.id === s4.id);
+    check('left arm back to original pos', s3U2.gx === -3 && s3U2.gz === 0);
+    check('left arm color restored', s3U2.paint === null);
     
-    // Undo the build itself
-    await page.click('#btn-undo');
+    await page.click('#btn-undo'); // undo build
     await sleep(250);
     check('zero shapes after undoing build', (await shapes(page)).length === 0);
 

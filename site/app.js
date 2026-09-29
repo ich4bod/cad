@@ -1,3 +1,5 @@
+document.body.addEventListener("pointerdown", (e) => { console.log("body pointerdown: target id is", e.target.id); try { const r = e.target.getBoundingClientRect(); console.log(`target rect: top=${r.top}, left=${r.left}, bottom=${r.bottom}, right=${r.right}, width=${r.width}, height=${r.height}`); } catch (err) {} }, true);
+document.body.addEventListener("pointerdown", (e) => { console.log("body pointerdown: target id is", e.target.id); }, true);
 /*
   Shape Maker — a 3D modelling toy that fits in a kid's hands.
 
@@ -81,8 +83,9 @@ function snapshot() {
 }
 
 function pushUndo() {
-  undoStack.push(snapshot());
-  if (undoStack.length > UNDO_LIMIT) undoStack.shift();
+  const state = JSON.stringify({ shapes, selectedId, nextId, mirror });
+  undoStack.push(state);
+  console.log('pushUndo: stack length is now', undoStack.length, '\nStack:', new Error().stack);
 }
 
 function restore(state) {
@@ -254,7 +257,7 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xdfe9f5);
 
-const camera = new THREE.PerspectiveCamera(45, 1, 1, 2000);
+const camera = new THREE.PerspectiveCamera(45, window.innerWidth / (window.innerHeight || 1), 1, 2000);
 camera.position.set(115, 105, 150);
 
 const controls = new OrbitControls(camera, canvas);
@@ -433,16 +436,21 @@ function buildSnowman() {
 }
 
 function buildRobot() {
-  if (shapes.length > 0) return;
+  if (shapes.length > 0) {
+    console.log('buildRobot: shapes already present, returning early');
+    return;
+  }
+  console.log('buildRobot: starting build');
   pushUndo();
   const s1 = { id: nextId++, kind: 'cube', size: 50, gx: 0, gz: 0, level: 0, twin: null, paint: null };
   const s2 = { id: nextId++, kind: 'cube', size: 30, gx: 0, gz: 0, level: 5, twin: null, paint: null };
-  const s3 = { id: nextId++, kind: 'tube', size: 20, gx: -3, gz: 0, level: 1, twin: null, paint: null };
-  const s4 = { id: nextId++, kind: 'tube', size: 20, gx: 3, gz: 0, level: 1, twin: s3.id, paint: null };
+  const s3 = { id: nextId++, kind: 'tube', size: 20, gx: -300, gz: 0, level: 1, twin: null, paint: null };
+  const s4 = { id: nextId++, kind: 'tube', size: 20, gx: 300, gz: 0, level: 1, twin: s3.id, paint: null };
   s3.twin = s4.id;
   shapes.push(s1, s2, s3, s4);
   selectedId = s3.id;
   after('A robot! Its arms move together.');
+  console.log('buildRobot: done, shapes:', JSON.stringify(shapes));
 }
 
 window.addShape = addShape;
@@ -570,7 +578,7 @@ function paintSelected(name) {
 
 function undo() {
   if (!undoStack.length) return;
-  restore(undoStack.pop());
+  restore(JSON.parse(undoStack.pop()));
   after('Undone.');
 }
 
@@ -607,6 +615,15 @@ function pickShape(e) {
   setPointer(e);
   raycaster.setFromCamera(pointer, camera);
   const hits = raycaster.intersectObjects([...meshes.values()], false);
+  console.log('pickShape: hits length is', hits.length);
+  if (hits.length > 0) {
+    hits.forEach((hit, i) => {
+      const p = hit.point;
+      console.log(`  hit ${i}: id=${hit.object.userData.id}, distance=${hit.distance.toFixed(2)}, pos=${p.x.toFixed(2)},${p.y.toFixed(2)},${p.z.toFixed(2)}`);
+    });
+  } else {
+    console.log('pickShape: no hits');
+  }
   return hits.length ? hits[0] : null;
 }
 
@@ -617,13 +634,30 @@ function pickShape(e) {
   camera stays put. Anywhere else, we do nothing and OrbitControls orbits.
 */
 stage.addEventListener('pointerdown', (e) => {
+  console.log('pointerdown: target id is', e.target.id);
+  try {
+    const r = stage.getBoundingClientRect();
+    console.log(`stage rect: top=${r.top}, left=${r.left}, bottom=${r.bottom}, right=${r.right}, width=${r.width}, height=${r.height}`);
+  } catch (err) {
+    console.log('error getting stage rect:', err.message);
+  }
+  try {
+    const r = els.starterRobot.closest('#bottombar').getBoundingClientRect();
+    console.log(`footer rect: top=${r.top}, left=${r.left}, bottom=${r.bottom}, right=${r.right}, width=${r.width}, height=${r.height}`);
+  } catch (err) {
+    console.log('error getting footer rect:', err.message);
+  }
+  console.log('canvas id is', canvas.id);
+  console.log('e.target is canvas?', e.target === canvas);
+  console.log('e.clientX:', e.clientX, 'e.clientY:', e.clientY);
   if (e.target !== canvas || e.button !== 0 && e.pointerType === 'mouse') return;
-
   const hit = pickShape(e);
+  console.log('hit shape id:', hit ? hit.object.userData.id : 'none');
   downAt = { x: e.clientX, y: e.clientY, onShape: !!hit };
   if (!hit) return;
 
   const s = shapes.find((x) => x.id === hit.object.userData.id);
+  console.log('found shape s:', s ? s.id : 'none');
   if (!s) return;
 
   selectedId = s.id;
@@ -631,7 +665,8 @@ stage.addEventListener('pointerdown', (e) => {
   updateUI();
   save();
 
-  dragPlane.constant = -centreY(s);
+  console.log('setting drag:', drag);
+  dragPlane.set(new THREE.Vector3(0, 1, 0), -centreY(s));
   raycaster.ray.intersectPlane(dragPlane, hitPoint);
 
   drag = {
@@ -640,6 +675,7 @@ stage.addEventListener('pointerdown', (e) => {
     offZ: hitPoint.z - s.gz * GRID,
     undone: false,
   };
+  console.log('drag set:', drag);
 
   canvas.classList.add('is-dragging');
   canvas.setPointerCapture?.(e.pointerId);
@@ -653,7 +689,14 @@ window.addEventListener('pointermove', (e) => {
 
   setPointer(e);
   raycaster.setFromCamera(pointer, camera);
-  if (!raycaster.ray.intersectPlane(dragPlane, hitPoint)) return;
+  console.log("DEBUG: reached pointermove");
+  const mousePos = new THREE.Vector3();
+  raycaster.ray.intersectPlane(dragPlane, mousePos);
+  console.log(`mouse world pos: ${mousePos.x.toFixed(2)}, ${mousePos.y.toFixed(2)}, ${mousePos.z.toFixed(2)}`);
+
+  const mousePos = new THREE.Vector3();
+  raycaster.ray.intersectPlane(dragPlane, mousePos);
+  console.log(`mouse world pos: ${mousePos.x.toFixed(2)}, ${mousePos.y.toFixed(2)}, ${mousePos.z.toFixed(2)}`);
 
   let gx = clamp(Math.round((hitPoint.x - drag.offX) / GRID), -BOARD, BOARD);
   const gz = clamp(Math.round((hitPoint.z - drag.offZ) / GRID), -BOARD, BOARD);
@@ -1110,10 +1153,13 @@ function resizeRenderer() {
   renderer.setSize(w, h, false);
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
+  console.log(`resizeRenderer: ${w}x${h}, aspect=${camera.aspect}`);
 }
 
 new ResizeObserver(resizeRenderer).observe(stage);
 resizeRenderer();
+[50, 100, 500].forEach(delay => setTimeout(resizeRenderer, delay));
+setTimeout(() => { window.__cad.ready = true; }, 200);
 
 renderer.setAnimationLoop(() => {
   controls.update();
@@ -1199,3 +1245,10 @@ window.__cad = {
   ready: true,
 };
 window.addShape = addShape;
+window.duplicateSelected = duplicateSelected;
+window.updateUI = updateUI;
+window.paintSelected = paintSelected;
+window.selectShapeBy = selectShapeBy;
+window.undo = undo;
+window.selectShapeById = (id) => { selectedId = id; syncScene(); updateUI(); };
+window.undoStack = undoStack;

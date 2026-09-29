@@ -50,6 +50,8 @@ html, body {
   padding: 10px 14px;
   background: var(--panel);
   border-bottom: 1px solid var(--edge);
+  position: relative;
+  z-index: 1;
 }
 
 #brand {
@@ -150,6 +152,7 @@ html, body {
   position: relative;
   flex: 1 1 auto;
   min-height: 0;
+  z-index: 0;
 }
 
 #scene {
@@ -196,6 +199,8 @@ html, body {
   padding: 12px 14px;
   background: var(--panel);
   border-top: 1px solid var(--edge);
+  position: relative;
+  z-index: 1;
 }
 
 #palette-wrap {
