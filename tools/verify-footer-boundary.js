@@ -88,19 +88,34 @@ async function main() {
     // 6. Reload, assert all three starter buttons are visible
     await page.reload({ waitUntil: 'networkidle' });
     await ready(page);
-    
-    const snowmanBtn = await page.isVisible('#starter-snowman');
-    const robotBtn = await page.isVisible('#starter-robot');
-    const rocketBtn = await page.isVisible('#starter-rocket');
-    check('all three starter buttons are visible', snowmanBtn && robotBtn && rocketBtn);
+    await page.waitForFunction(() => {
+      const ids = ['starter-snowman', 'starter-robot', 'starter-rocket'];
+      return ids.every((id) => {
+        const el = document.getElementById(id);
+        return el && !el.hidden && el.getClientRects().length > 0;
+      });
+    });
+
+    const starterGeometry = await page.evaluate(() => {
+      const viewport = { width: window.innerWidth, height: window.innerHeight };
+      const ids = ['starter-snowman', 'starter-robot', 'starter-rocket'];
+      return ids.map((id) => {
+        const rect = document.getElementById(id).getBoundingClientRect();
+        return { id, left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom,
+          inside: rect.left >= 10 && rect.right <= viewport.width - 10 &&
+            rect.top >= 10 && rect.bottom <= viewport.height - 10 };
+      });
+    });
+    check('all three starter buttons are visible', starterGeometry.every((item) => item.inside),
+      JSON.stringify(starterGeometry));
 
     // 7. Click Rocket
     await page.click('#starter-rocket');
-    await sleep(500); // Wait for build to happen
+    await page.waitForFunction(() => document.getElementById('btn-undo')?.disabled === false);
 
     // 8. Undo and assert the URL remains the CAD URL and the starter tray returns
     await page.click('#btn-undo');
-    await sleep(500);
+    await page.waitForFunction(() => !document.getElementById('starter-models')?.hidden);
     
     const urlAfterUndo = page.url();
     check('URL remains CAD URL after undo', urlAfterUndo === BASE || urlAfterUndo.startsWith(BASE + '/'));
