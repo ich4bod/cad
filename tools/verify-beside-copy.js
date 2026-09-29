@@ -69,7 +69,7 @@ async function click(page, selector, count = 1) {
 
     const button = page.locator('#btn-beside-copy');
     if (await button.count() !== 1) throw new Error('Beside copy button missing');
-    if (await page.textContent('#btn-beside-copy') !== 'Beside copy') throw new Error('Beside copy label wrong');
+    if ((await page.textContent('#btn-beside-copy')).trim() !== 'Beside copy') throw new Error('Beside copy label wrong');
 
     // A painted, lying 30mm Tube at level 2 copies three grid cells right.
     await page.evaluate(() => window.addShape('tube'));
