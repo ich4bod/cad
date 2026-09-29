@@ -151,7 +151,7 @@ html, body {
 #stage {
   position: relative;
   flex: 1 1 auto;
-  min-height: 0;
+  min-height: 100px;
   z-index: 0;
 }
 
@@ -191,9 +191,12 @@ html, body {
 /* ---------- bottom bar ---------- */
 
 #bottombar {
-  flex: 0 0 auto;
+  flex: 0 1 auto;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
   align-items: center;
   gap: 10px 18px;
   padding: 12px 14px;
@@ -201,6 +204,7 @@ html, body {
   border-top: 1px solid var(--edge);
   position: relative;
   z-index: 1;
+  max-height: 40%;
 }
 
 #palette-wrap {
