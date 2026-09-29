@@ -91,7 +91,7 @@ async function main() {
     check('all three starter buttons visible after reload', snowmanVisible && robotVisible && rocketVisible);
 
     // 7. Click Rocket
-    await page.click('#starter-rocket', { force: true });
+    await page.evaluate(() => document.querySelector('#starter-rocket')?.click());
     await sleep(250);
 
     // 8. Undo and assert URL remains CAD URL and starter tray returns
