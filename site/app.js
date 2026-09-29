@@ -453,6 +453,19 @@ function buildRobot() {
   console.log('buildRobot: done, shapes:', JSON.stringify(shapes));
 }
 
+function buildRocket() {
+  if (shapes.length > 0) return;
+  pushUndo();
+  const s1 = { id: nextId++, kind: 'tube', size: 40, gx: 0, gz: 0, level: 0, twin: null, paint: null };
+  const s2 = { id: nextId++, kind: 'cone', size: 40, gx: 0, gz: 0, level: 4, twin: null, paint: null };
+  const s3 = { id: nextId++, kind: 'cube', size: 20, gx: -3, gz: 0, level: 0, twin: null, paint: null };
+  const s4 = { id: nextId++, kind: 'cube', size: 20, gx: 3, gz: 0, level: 0, twin: s3.id, paint: null };
+  s3.twin = s4.id;
+  shapes.push(s1, s2, s3, s4);
+  selectedId = s3.id;
+  after('A rocket! Change the nose, body, or fins.');
+}
+
 window.addShape = addShape;
 function addShape(kind) {
   try {
@@ -900,6 +913,7 @@ const els = {
   starterModels: document.getElementById('starter-models'),
   starterSnowman: document.getElementById('starter-snowman'),
   starterRobot: document.getElementById('starter-robot'),
+  starterRocket: document.getElementById('starter-rocket'),
 };
 
 /* A first visit gets four concrete gestures, not a mode or a lesson screen.
@@ -1010,6 +1024,7 @@ els.mirror.addEventListener('click', toggleMirror);
 els.clear.addEventListener('click', clearAll);
 els.starterSnowman.addEventListener('click', buildSnowman);
 els.starterRobot.addEventListener('click', buildRobot);
+els.starterRocket.addEventListener('click', buildRocket);
 els.undo.addEventListener('click', undo);
 els.home.addEventListener('click', resetView);
 els.save.addEventListener('click', download);

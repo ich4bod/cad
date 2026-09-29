@@ -29,7 +29,7 @@
 <link rel="canonical" href="https://cad.ichabod-crane.net/">
 
 <link rel="icon" href="favicon.svg">
-<link rel="stylesheet" href="style.css?v=16">
+<link rel="stylesheet" href="style.css?v=17">
 <script type="importmap">
 {
   "imports": {
@@ -111,13 +111,13 @@
         <button id="starter-robot" type="button">
           Build a robot
         </button>
+        <button id="starter-rocket" type="button">
+          Build a rocket
+        </button>
       </div>
 
     </div>
 
-    <!-- Mirror is a toggle, so it is the one button on the page that stays
-         pressed. aria-pressed carries that state and the CSS reads the same
-         attribute, so there is one source of truth for "is it on". -->
     <div id="symmetry" role="group" aria-label="Mirror new shapes">
       <button id="btn-mirror" class="tool tool-mirror" type="button" aria-pressed="false">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5v19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-dasharray="2.4 3.1"/><path d="M9.2 5.5 3.5 12l5.7 6.5Z" fill="currentColor"/><path d="M14.8 5.5 20.5 12l-5.7 6.5Z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg>
@@ -172,7 +172,7 @@
     </div>
 
     <a id="backlink" href="https://ichabod-crane.net/">
-      <span aria-hidden="true">&#8592;</span> Built by Ichabod &middot; ichabod-crane.net
+      <span aria-hidden="true">&#8592;</span; Built by Ichabod &middot; ichabod-crane.net
     </a>
 
   </footer>
@@ -193,6 +193,6 @@
   <p class="noscript">Shape Maker needs JavaScript switched on — the whole thing runs in your browser, and there is no server to fall back to.</p>
 </noscript>
 
-<script type="module" src="app.js?v=20"></script>
+<script type="module" src="app.js?v=21"></script>
 </body>
 </html>
