@@ -67,7 +67,8 @@ const PAINTS = {
 */
 
 /** shapes: [{ id, kind, size, gx, gz, level, twin }] — the entire document.
- *  `twin` is the id of this shape's mirrored partner, or null. */
+ *  `twin` is the id of this shape's mirrored partner, or null. `lying` is
+ *  whether a tube or cone is turned onto its side. */
 let shapes = [];
 let nextId = 1;
 let selectedId = null;
@@ -183,6 +184,7 @@ function load() {
       level: clamp(level, 0, LEVEL_MAX),
       twin: int(s.twin),
       paint: s.paint || null,
+      lying: s.lying === true,
     });
   }
 
@@ -208,6 +210,8 @@ const selected = () => {
   const s = shapes.find((s) => s.id == selectedId) || null;
   return s;
 };
+
+const canLie = (s) => !!s && (s.kind === 'tube' || s.kind === 'cone');
 
 /** The partner of a shape, if it has one. */
 const twinOf = (s) => (s && s.twin != null ? shapes.find((x) => x.id === s.twin) || null : null);
@@ -355,6 +359,7 @@ function syncScene() {
       mesh.material.color.setHex(s.paint ? PAINTS[s.paint] : KINDS[s.kind].colour);
     }
     placeMesh(mesh, s);
+    mesh.rotation.x = canLie(s) && s.lying ? Math.PI / 2 : 0;
     // A mirrored twin lights up with the shape you picked, because the next
     // thing you do is going to happen to both of them.
     mesh.children[0].visible =
@@ -439,9 +444,9 @@ function freeCell(paired) {
 function buildSnowman() {
   if (shapes.length > 0) return;
   pushUndo();
-  const s1 = { id: nextId++, kind: 'ball', size: 50, gx: 0, gz: 0, level: 0, twin: null, paint: null };
-  const s2 = { id: nextId++, kind: 'ball', size: 40, gx: 0, gz: 0, level: 5, twin: null, paint: null };
-  const s3 = { id: nextId++, kind: 'ball', size: 30, gx: 0, gz: 0, level: 9, twin: null, paint: null };
+  const s1 = { id: nextId++, kind: 'ball', size: 50, gx: 0, gz: 0, level: 0, twin: null, paint: null, lying: false };
+  const s2 = { id: nextId++, kind: 'ball', size: 40, gx: 0, gz: 0, level: 5, twin: null, paint: null, lying: false };
+  const s3 = { id: nextId++, kind: 'ball', size: 30, gx: 0, gz: 0, level: 9, twin: null, paint: null, lying: false };
   shapes.push(s1, s2, s3);
   selectedId = s3.id;
   after('A snowman! Every ball is yours to change.');
@@ -454,10 +459,10 @@ function buildRobot() {
   }
   console.log('buildRobot: starting build');
   pushUndo();
-  const s1 = { id: nextId++, kind: 'cube', size: 50, gx: 0, gz: 0, level: 0, twin: null, paint: null };
-  const s2 = { id: nextId++, kind: 'cube', size: 30, gx: 0, gz: 0, level: 5, twin: null, paint: null };
-  const s3 = { id: nextId++, kind: 'tube', size: 20, gx: -3, gz: 0, level: 1, twin: null, paint: null };
-  const s4 = { id: nextId++, kind: 'tube', size: 20, gx: 3, gz: 0, level: 1, twin: s3.id, paint: null };
+  const s1 = { id: nextId++, kind: 'cube', size: 50, gx: 0, gz: 0, level: 0, twin: null, paint: null, lying: false };
+  const s2 = { id: nextId++, kind: 'cube', size: 30, gx: 0, gz: 0, level: 5, twin: null, paint: null, lying: false };
+  const s3 = { id: nextId++, kind: 'tube', size: 20, gx: -3, gz: 0, level: 1, twin: null, paint: null, lying: false };
+  const s4 = { id: nextId++, kind: 'tube', size: 20, gx: 3, gz: 0, level: 1, twin: s3.id, paint: null, lying: false };
   s3.twin = s4.id;
   shapes.push(s1, s2, s3, s4);
   selectedId = s3.id;
@@ -468,10 +473,10 @@ function buildRobot() {
 function buildRocket() {
   if (shapes.length > 0) return;
   pushUndo();
-  const s1 = { id: nextId++, kind: 'tube', size: 40, gx: 0, gz: 0, level: 0, twin: null, paint: null };
-  const s2 = { id: nextId++, kind: 'cone', size: 40, gx: 0, gz: 0, level: 4, twin: null, paint: null };
-  const s3 = { id: nextId++, kind: 'cube', size: 20, gx: -3, gz: 0, level: 0, twin: null, paint: null };
-  const s4 = { id: nextId++, kind: 'cube', size: 20, gx: 3, gz: 0, level: 0, twin: s3.id, paint: null };
+  const s1 = { id: nextId++, kind: 'tube', size: 40, gx: 0, gz: 0, level: 0, twin: null, paint: null, lying: false };
+  const s2 = { id: nextId++, kind: 'cone', size: 40, gx: 0, gz: 0, level: 4, twin: null, paint: null, lying: false };
+  const s3 = { id: nextId++, kind: 'cube', size: 20, gx: -3, gz: 0, level: 0, twin: null, paint: null, lying: false };
+  const s4 = { id: nextId++, kind: 'cube', size: 20, gx: 3, gz: 0, level: 0, twin: s3.id, paint: null, lying: false };
   s3.twin = s4.id;
   shapes.push(s1, s2, s3, s4);
   selectedId = s3.id;
@@ -483,7 +488,7 @@ function addShape(kind) {
   try {
     pushUndo();
     const { gx, gz } = freeCell(mirror);
-    const s = { id: nextId++, kind, size: SIZE_DEFAULT, gx, gz, level: 0, twin: null, paint: null };
+    const s = { id: nextId++, kind, size: SIZE_DEFAULT, gx, gz, level: 0, twin: null, paint: null, lying: false };
     shapes.push(s);
     selectedId = s.id;
     if (mirror) {
@@ -618,6 +623,16 @@ function reshapeSelected(kind) {
   if (t) t.kind = kind;
   const label = KINDS[kind].label;
   after(`Now it’s a ${label[0].toUpperCase()}${label.slice(1)}.`);
+}
+
+function turnSelected() {
+  const s = selected();
+  if (!canLie(s)) return;
+  pushUndo();
+  s.lying = !s.lying;
+  const t = twinOf(s);
+  if (t) t.lying = s.lying;
+  after(s.lying ? 'Lying down.' : 'Standing up.');
 }
 
 function paintSelected(name) {
@@ -852,6 +867,7 @@ function exportTriangles() {
   for (const s of shapes) {
     const weld = weldFor(s);
     const f = (s.size + weld) / s.size;
+    q.setFromEuler(new THREE.Euler(canLie(s) && s.lying ? Math.PI / 2 : 0, 0, 0));
     // Grown about its own centre, then lifted by half the growth so the
     // bottom face stays exactly where the kid put it, on the plate.
     pos.set(s.gx * GRID, centreY(s) + weld / 2, s.gz * GRID);
@@ -945,6 +961,7 @@ const els = {
   mirror: document.getElementById('btn-mirror'),
   plate: document.getElementById('btn-plate'),
   center: document.getElementById('btn-center'),
+  turn: document.getElementById('btn-turn'),
   tour: document.getElementById('tour'),
   tourCount: document.getElementById('tour-count'),
   tourTitle: document.getElementById('tour-title'),
@@ -1046,6 +1063,10 @@ function setHint(text) {
       els.del.disabled = !s;
       els.plate.disabled = !s || s.level === 0;
       els.center.disabled = !s || s.twin != null || (s.gx === 0 && s.gz === 0);
+      els.turn.disabled = !canLie(s);
+      const turnLabel = canLie(s) && s.lying ? 'Stand up' : 'Lay down';
+      els.turn.setAttribute('aria-label', turnLabel);
+      els.turn.querySelector('span').textContent = turnLabel;
       els.clear.disabled = shapes.length === 0;
       els.starterShelf.hidden = shapes.length !== 0;
       els.starterModels.hidden = shapes.length !== 0;
@@ -1096,6 +1117,7 @@ els.drop.addEventListener('click', dropSelected);
 els.unpair.addEventListener('click', unpairSelected);
 els.plate.addEventListener('click', toPlate);
 els.center.addEventListener('click', centerSelected);
+els.turn.addEventListener('click', turnSelected);
 els.previousShape.addEventListener('click', () => selectShapeBy(-1));
 els.nextShape.addEventListener('click', () => selectShapeBy(1));
 
