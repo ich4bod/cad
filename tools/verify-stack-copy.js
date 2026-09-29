@@ -41,7 +41,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     await page.reload({ waitUntil: 'domcontentloaded' }); await page.waitForFunction(() => window.__cad?.ready);
     if ((await state()).shapes.length !== 5) throw new Error(`stack persistence failed: ${(await state()).shapes.length}`);
     const stl = await page.evaluate(() => window.__cad.stl());
-    if (!stl.length || !stl[0].startsWith('solid')) throw new Error('STL validation failed');
+    if (stl.length <= 84 || stl[0] !== 83 || stl[1] !== 104) throw new Error('STL validation failed');
     await page.evaluate(() => localStorage.clear()); await page.reload({ waitUntil: 'domcontentloaded' }); await page.waitForFunction(() => window.__cad?.ready);
     await page.evaluate(() => window.addShape('cube')); await sleep(100); await click('#btn-bigger', 5); await click('#btn-up', 7);
     if (!(await page.isDisabled('#btn-stack-copy'))) throw new Error('stack cap was not disabled');
