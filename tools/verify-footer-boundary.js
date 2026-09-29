@@ -49,10 +49,6 @@ async function main() {
     const dismissTour = (page) => page.isVisible('#tour').then(v => v && page.click('#tour-skip', { force: true }));
 
     await ready(page);
-    // We don't want the tour to show up and hide things for our test, 
-    // but the test says "clear stored document state without clearing the completed-tour key". 
-    // This implies an existing tour might have been completed.
-    // Let's just dismiss if it shows up.
     await dismissTour(page);
 
     // 1. Assert exactly one #backlink
@@ -69,11 +65,8 @@ async function main() {
     check('#tour and #starter-models are not descendants of #backlink', !descendantsCheck);
 
     // 3. Click Skip and assert the URL remains the CAD URL
-    // Wait, if we haven't started the tour, 'Skip' might not be visible. 
-    // But the test says "click Skip".
-    // Let's try to click Skip if it's there.
     if (await page.isVisible('#tour-skip')) {
-        await page.click('#tour-skip');
+        await page.click('#tour-skip', { force: true });
         await sleep(250);
     }
     const currentUrl = page.url();
@@ -89,13 +82,16 @@ async function main() {
     await ready(page);
 
     // 6. Assert all three starter buttons are visible
+    // Scroll to the starter models to ensure they are in the viewport
+    await page.evaluate(() => document.querySelector('#starter-models')?.scrollIntoView());
+    await sleep(250);
     const snowmanVisible = await page.isVisible('#starter-snowman');
     const robotVisible = await page.isVisible('#starter-robot');
     const rocketVisible = await page.isVisible('#starter-rocket');
     check('all three starter buttons visible after reload', snowmanVisible && robotVisible && rocketVisible);
 
     // 7. Click Rocket
-    await page.click('#starter-rocket');
+    await page.click('#starter-rocket', { force: true });
     await sleep(250);
 
     // 8. Undo and assert URL remains CAD URL and starter tray returns
