@@ -475,9 +475,10 @@ button:disabled {
     justify-content: flex-start;
   }
   #starter-models {
-    position: absolute;
+    position: fixed;
     left: 10px;
-    top: 10px;
+    right: 10px;
+    bottom: 70px;
     flex: 0 1 100%;
     width: calc(100vw - 20px);
     min-width: 0;
