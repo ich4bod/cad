@@ -4,3 +4,4 @@
 .verify/
 proof/
 node_modules/
+tools/*.stl
