@@ -421,6 +421,17 @@ function freeCell(paired) {
   return paired ? { gx: 2, gz: 0 } : { gx: 0, gz: 0 };
 }
 
+function buildSnowman() {
+  if (shapes.length > 0) return;
+  pushUndo();
+  const s1 = { id: nextId++, kind: 'ball', size: 50, gx: 0, gz: 0, level: 0, twin: null, paint: null };
+  const s2 = { id: nextId++, kind: 'ball', size: 40, gx: 0, gz: 0, level: 5, twin: null, paint: null };
+  const s3 = { id: nextId++, kind: 'ball', size: 30, gx: 0, gz: 0, level: 9, twin: null, paint: null };
+  shapes.push(s1, s2, s3);
+  selectedId = s3.id;
+  after('A snowman! Every ball is yours to change.');
+}
+
 window.addShape = addShape;
 function addShape(kind) {
   try {
@@ -822,6 +833,8 @@ const els = {
   clear: document.getElementById('btn-clear'),
   starterShelf: document.getElementById('starter-shelf'),
   paint: document.getElementById('paint'),
+  starterModels: document.getElementById('starter-models'),
+  starterSnowman: document.getElementById('starter-snowman'),
 };
 
 /* A first visit gets four concrete gestures, not a mode or a lesson screen.
@@ -901,6 +914,7 @@ function setHint(text) {
       els.center.disabled = !s || s.twin != null || (s.gx === 0 && s.gz === 0);
       els.clear.disabled = shapes.length === 0;
       els.starterShelf.hidden = shapes.length !== 0;
+      els.starterModels.hidden = shapes.length !== 0;
       els.mirror.setAttribute('aria-pressed', String(mirror));
       els.paint.hidden = !s;
       if (s) {
@@ -929,6 +943,7 @@ els.down.addEventListener('click', () => lift(-1));
 els.del.addEventListener('click', removeSelected);
 els.mirror.addEventListener('click', toggleMirror);
 els.clear.addEventListener('click', clearAll);
+els.starterSnowman.addEventListener('click', buildSnowman);
 els.undo.addEventListener('click', undo);
 els.home.addEventListener('click', resetView);
 els.save.addEventListener('click', download);
