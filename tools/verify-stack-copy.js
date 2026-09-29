@@ -13,7 +13,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     await page.waitForFunction(() => window.__cad?.ready, { timeout: 10000 });
     if (await page.isVisible('#tour')) await page.click('#tour-skip');
     const state = () => page.evaluate(() => ({ shapes: window.__cad.shapes(), selected: window.__cad.selectedId(), undo: window.__cad.undoDepth() }));
-    const click = async (sel, n = 1) => { for (let i = 0; i < n; i++) { await page.click(sel); await sleep(80); } };
+    const click = async (sel, n = 1) => { for (let i = 0; i < n; i++) { await page.click(sel, { force: true }); await sleep(80); } };
     await click('[data-kind="cube"]');
     await click('[data-paint="violet"]');
     await click('#btn-bigger');
