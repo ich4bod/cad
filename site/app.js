@@ -917,6 +917,7 @@ const els = {
   tourSkip: document.getElementById('tour-skip'),
   tourNext: document.getElementById('tour-next'),
   copy: document.getElementById('btn-copy'),
+  stackCopy: document.getElementById('btn-stack-copy'),
   unpair: document.getElementById('btn-unpair'),
   clear: document.getElementById('btn-clear'),
   starterShelf: document.getElementById('starter-shelf'),
@@ -997,6 +998,8 @@ function setHint(text) {
         ? 'Ready to print: 1 shape'
         : `Ready to print: ${shapes.length} shapes`;
       els.copy.disabled = !s;
+      const stackLevel = s ? s.level + s.size / GRID : 0;
+      els.stackCopy.disabled = !s || stackLevel > LEVEL_MAX;
       els.unpair.disabled = !s || !twinOf(s);
       els.bigger.disabled = !s || s.size >= SIZE_MAX;
       els.smaller.disabled = !s || s.size <= SIZE_MIN;
@@ -1043,11 +1046,34 @@ els.undo.addEventListener('click', undo);
 els.home.addEventListener('click', resetView);
 els.save.addEventListener('click', download);
 els.copy.addEventListener('click', duplicateSelected);
+els.stackCopy.addEventListener('click', stackCopy);
 els.unpair.addEventListener('click', unpairSelected);
 els.plate.addEventListener('click', toPlate);
 els.center.addEventListener('click', centerSelected);
 els.previousShape.addEventListener('click', () => selectShapeBy(-1));
 els.nextShape.addEventListener('click', () => selectShapeBy(1));
+
+function stackCopy() {
+  const s = selected();
+  const level = s ? s.level + s.size / GRID : 0;
+  if (!s || level > LEVEL_MAX) return;
+  pushUndo();
+  const t = twinOf(s);
+  if (t) {
+    const id1 = nextId++;
+    const id2 = nextId++;
+    const newS1 = { ...s, id: id1, level, twin: id2 };
+    const newS2 = { ...t, id: id2, level, twin: id1 };
+    shapes.push(newS1, newS2);
+    selectedId = id1;
+    after('Stacked both! The new pair moves together.');
+  } else {
+    const id = nextId++;
+    shapes.push({ ...s, id, level, twin: null });
+    selectedId = id;
+    after('Stacked! The new piece is selected.');
+  }
+}
 
 function duplicateSelected() {
   const s = selected();
