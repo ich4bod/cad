@@ -970,6 +970,7 @@ const els = {
   tourNext: document.getElementById('tour-next'),
   copy: document.getElementById('btn-copy'),
   stackCopy: document.getElementById('btn-stack-copy'),
+  besideCopy: document.getElementById('btn-beside-copy'),
   drop: document.getElementById('btn-drop'),
   unpair: document.getElementById('btn-unpair'),
   clear: document.getElementById('btn-clear'),
@@ -1054,6 +1055,8 @@ function setHint(text) {
       els.copy.disabled = !s;
       const stackLevel = s ? s.level + s.size / GRID : 0;
       els.stackCopy.disabled = !s || stackLevel > LEVEL_MAX;
+      const besideSources = s ? [s, ...(twinOf(s) ? [twinOf(s)] : [])] : [];
+      els.besideCopy.disabled = !s || !besideCopyDirection(besideSources);
       els.drop.disabled = !s || !!twinOf(s) || landingLevel(s) === s.level;
       els.unpair.disabled = !s || !twinOf(s);
       els.bigger.disabled = !s || s.size >= SIZE_MAX;
@@ -1113,6 +1116,7 @@ els.home.addEventListener('click', resetView);
 els.save.addEventListener('click', download);
 els.copy.addEventListener('click', duplicateSelected);
 els.stackCopy.addEventListener('click', stackCopy);
+els.besideCopy.addEventListener('click', besideCopy);
 els.drop.addEventListener('click', dropSelected);
 els.unpair.addEventListener('click', unpairSelected);
 els.plate.addEventListener('click', toPlate);
@@ -1141,6 +1145,52 @@ function stackCopy() {
     selectedId = id;
     after('Stacked! The new piece is selected.');
   }
+}
+
+const besideDirections = (size) => [
+  { gx: size / GRID, gz: 0 },
+  { gx: -size / GRID, gz: 0 },
+  { gx: 0, gz: size / GRID },
+  { gx: 0, gz: -size / GRID },
+];
+
+function besideCopyDirection(sourceRecords) {
+  if (!sourceRecords.length) return null;
+  for (const direction of besideDirections(sourceRecords[0].size)) {
+    if (sourceRecords.every((source) => {
+      const gx = source.gx + direction.gx;
+      const gz = source.gz + direction.gz;
+      return gx >= -BOARD && gx <= BOARD && gz >= -BOARD && gz <= BOARD;
+    })) return direction;
+  }
+  return null;
+}
+
+function besideCopy() {
+  const s = selected();
+  if (!s) return;
+  const t = twinOf(s);
+  const sourceRecords = t ? [s, t] : [s];
+  const direction = besideCopyDirection(sourceRecords);
+  if (!direction) return;
+
+  pushUndo();
+  const copies = sourceRecords.map((source) => ({
+    ...source,
+    id: nextId++,
+    gx: source.gx + direction.gx,
+    gz: source.gz + direction.gz,
+    twin: null,
+  }));
+  if (copies.length === 2) {
+    copies[0].twin = copies[1].id;
+    copies[1].twin = copies[0].id;
+  }
+  shapes.push(...copies);
+  selectedId = copies[0].id;
+  after(copies.length === 1
+    ? 'Copied beside it. The new piece is selected.'
+    : 'Copied the pair beside it. The new pair moves together.');
 }
 
 function duplicateSelected() {
