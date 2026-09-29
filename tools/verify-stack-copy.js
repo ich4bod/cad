@@ -7,7 +7,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const browser = await chromium.launch({ args: ['--no-sandbox'] });
   try {
     const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
-    await context.addInitScript(() => localStorage.clear());
+    await context.addInitScript(() => { if (!sessionStorage.getItem('stack-copy-cleared')) { localStorage.clear(); sessionStorage.setItem('stack-copy-cleared', '1'); } });
     const page = await context.newPage();
     await page.goto(BASE, { waitUntil: 'domcontentloaded' });
     await page.waitForFunction(() => window.__cad?.ready, { timeout: 10000 });
