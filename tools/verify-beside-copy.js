@@ -29,6 +29,7 @@ async function reset(page) {
   await page.evaluate(() => localStorage.removeItem(window.__cad.storageKey()));
   await page.reload({ waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => window.__cad?.ready, { timeout: 10000 });
+  await sleep(300);
   if (await page.isVisible('#tour')) await page.click('#tour-skip');
 }
 
