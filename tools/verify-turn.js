@@ -9,7 +9,12 @@ const fieldsOf = (s) => ({ id: s.id, kind: s.kind, size: s.size, gx: s.gx, gz: s
   const browser = await chromium.launch({ args: ['--no-sandbox'] });
   try {
     const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
-    await context.addInitScript(() => localStorage.clear());
+    await context.addInitScript(() => {
+      if (!sessionStorage.getItem('__verifyTurnCleared')) {
+        localStorage.clear();
+        sessionStorage.setItem('__verifyTurnCleared', '1');
+      }
+    });
     const page = await context.newPage();
     await page.goto(BASE, { waitUntil: 'networkidle' });
     await page.waitForFunction(() => window.__cad?.ready);
