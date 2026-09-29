@@ -57,6 +57,7 @@ async function main() {
 
     // 1. Assert exactly one #backlink
     const linkCount = await page.evaluate(() => document.querySelectorAll('#backlink').length);
+    process.stderr.write('  DEBUG: linkCount is ' + linkCount + '\n');
     check('exactly one #backlink', linkCount === 1);
 
     // 2. Assert #tour and #starter-models are not descendants of it

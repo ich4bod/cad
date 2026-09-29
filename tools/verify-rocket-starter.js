@@ -52,8 +52,8 @@ async function main() {
     const ready = (page) => page.waitForFunction(() => window.__cad && window.__cad.ready, null, { timeout: 30000 });
     const dismissTour = (page) => page.isVisible('#tour').then(v => v && page.click('#tour-skip', { force: true }));
 
-    await ready(page); console.log("CURRENT URL:", page.url()); console.log("PAGE TITLE:", await page.title());
-    // await dismissTour(page);
+    await ready(page);
+    await dismissTour(page);
 
     // 1. Assert tray is visible initially
     check('tray visible initially', await page.isVisible('#starter-models'));
@@ -63,7 +63,7 @@ async function main() {
       await page.click('#starter-rocket');
     } catch (e) {
       console.error('--- FAIL: #starter-rocket not clickable ---');
-      console.error(await page.content()); await page.screenshot({path: "failure.png"});
+      console.error(await page.content());
       throw e;
     }
     await sleep(250);
@@ -137,11 +137,7 @@ async function main() {
     // 1: build
     // 2: to plate
     // 3: select s3 (no, that's not an undo)
-    // wait, buildRocket does ONE pushUndo.
-    // Then To plate does ONE pushUndo.
-    // Then the select s3 doesn't?
-    // Let's see.
-    // addShape, resize, lift, toPlate, centerSelected, removeSelected, toggleMirror, paintSelected, undo, duplicateSelected, addShape.
+    // wait, addShape, resize, lift, toPlate, centerSelected, removeSelected, toggleMirror, paintSelected, undo, duplicateSelected, addShape.
     // All these do pushUndo.
     // My sequence:
     // buildRocket (1 undo)
@@ -161,9 +157,8 @@ async function main() {
     await page.click('#starter-rocket');
     await sleep(250);
     await page.reload();
-    await ready(page); console.log("CURRENT URL:", page.url()); console.log("PAGE TITLE:", await page.title());
-    // await dismissTour(page);
-    
+    await ready(page);
+
     const sListReloaded = await shapes(page);
     check('four shapes after reload', sListReloaded.length === 4);
     
@@ -178,13 +173,16 @@ async function main() {
     stlChecker.report(stlRes, tempStl);
     check('STL is valid', stlRes.ok);
 
+    // Remove the temporary STL
+    if (fs.existsSync(tempStl)) fs.unlinkSync(tempStl);
+
     // 9. Check overflow at 390x844
     await page.setViewportSize({ width: 390, height: 844 });
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
     check('no horizontal overflow at 390x844', !overflow);
 
     // 10. Check all three starter buttons are visible
-    const mh = await page.evaluate(() => getComputedStyle(document.querySelector('#stage')).minHeight); console.log("Stage minHeight:", mh); const stageMinHeight = await page.evaluate(() => getComputedStyle(document.querySelector('#stage')).minHeight); console.log("Stage computed minHeight:", stageMinHeight); check('snowman button visible', await page.isVisible('#starter-snowman'));
+    check('snowman button visible', await page.isVisible('#starter-snowman'));
     check('robot button visible', await page.isVisible('#starter-robot'));
     check('rocket button visible', await page.isVisible('#starter-rocket'));
 
