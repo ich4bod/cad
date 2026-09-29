@@ -477,6 +477,21 @@ function toPlate() {
   after('Back on the plate.');
 }
 
+function centerSelected() {
+  const s = selected();
+  if (!s || s.twin != null || (s.gx === 0 && s.gz === 0)) return;
+
+  pushUndo();
+  s.gx = 0;
+  s.gz = 0;
+  const t = twinOf(s);
+  if (t) {
+    t.gx = 0;
+    t.gz = 0;
+  }
+  after('Centered on the plate.');
+}
+
 function removeSelected() {
   const s = selected();
   if (!s) return;
@@ -796,6 +811,7 @@ const els = {
   del: document.getElementById('btn-delete'),
   mirror: document.getElementById('btn-mirror'),
   plate: document.getElementById('btn-plate'),
+  center: document.getElementById('btn-center'),
   tour: document.getElementById('tour'),
   tourCount: document.getElementById('tour-count'),
   tourTitle: document.getElementById('tour-title'),
@@ -882,6 +898,7 @@ function setHint(text) {
       els.down.disabled = !s || s.level <= 0;
       els.del.disabled = !s;
       els.plate.disabled = !s || s.level === 0;
+      els.center.disabled = !s || s.twin != null || (s.gx === 0 && s.gz === 0);
       els.clear.disabled = shapes.length === 0;
       els.starterShelf.hidden = shapes.length !== 0;
       els.mirror.setAttribute('aria-pressed', String(mirror));
@@ -917,6 +934,7 @@ els.home.addEventListener('click', resetView);
 els.save.addEventListener('click', download);
 els.copy.addEventListener('click', duplicateSelected);
 els.plate.addEventListener('click', toPlate);
+els.center.addEventListener('click', centerSelected);
 
 function duplicateSelected() {
   const s = selected();
