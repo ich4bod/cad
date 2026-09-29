@@ -29,7 +29,7 @@
 <link rel="canonical" href="https://cad.ichabod-crane.net/">
 
 <link rel="icon" href="favicon.svg">
-<link rel="stylesheet" href="style.css?v=26">
+<link rel="stylesheet" href="style.css?v=27">
 <script type="importmap">
 {
   "imports": {
@@ -46,6 +46,10 @@
     <h1 id="brand">Shape Maker</h1>
     <p id="shape-count" aria-live="polite">0 shapes</p>
     <output id="selected-readout" aria-live="polite">No shape selected</output>
+    <div id="shape-browser" role="group" aria-label="Browse shapes">
+      <button id="btn-previous-shape" type="button" aria-label="Select previous shape">Previous</button>
+      <button id="btn-next-shape" type="button" aria-label="Select next shape">Next</button>
+    </div>
     <p id="mirror-note" hidden>This shape moves with its mirror.</p>
     <p id="hint" aria-live="polite">Tap a shape below to start</p>
     <div id="topactions">
@@ -193,6 +197,6 @@
   <p class="noscript">Shape Maker needs JavaScript switched on — the whole thing runs in your browser, and there is no server to fall back to.</p>
 </noscript>
 
-<script type="module" src="app.js?v=23"></script>
+<script type="module" src="app.js?v=25"></script>
 </body>
 </html>

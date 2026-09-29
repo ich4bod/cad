@@ -82,6 +82,30 @@ html, body {
   white-space: nowrap;
 }
 
+#shape-browser {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 4px;
+  padding: 3px;
+  background: #fff;
+  border-radius: 999px;
+}
+
+#shape-browser button {
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 13px;
+  color: #536174;
+  font-size: 13px;
+  font-weight: 600;
+  border: 0;
+  border-radius: 999px;
+  box-shadow: none;
+}
+
+#shape-browser button:focus-visible { outline: 3px solid #1c7ed6; outline-offset: 2px; }
+#shape-browser button:disabled { opacity: .45; cursor: default; }
+
 #mirror-note {
   margin: 4px 0 0;
   color: #536174;
@@ -404,6 +428,9 @@ button:disabled {
 @media (max-width: 720px) {
   #brand { display: none; }
   #shape-count, #selected-readout { font-size: 13px; }
+  #shape-browser { order: 5; }
+  #hint { order: 6; flex-basis: 100%; }
+
   #hint { font-size: 14px; }
   #bottombar { gap: 8px 12px; padding: 10px; justify-content: center; }
   /* Once the bar wraps, the dashed rules separate nothing — each group is

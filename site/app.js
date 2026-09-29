@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
+
 /*
   Shape Maker — a 3D modelling toy that fits in a kid's hands.
 
@@ -18,9 +19,6 @@ import { OrbitControls } from './vendor/three/OrbitControls.js';
      Undo button always works — which is the actual requirement.
      A kid who cannot undo a mistake stops playing.
 */
-
-import * as THREE from 'three';
-import { OrbitControls } from './vendor/three/OrbitControls.js';
 
 window.__cad = { ready: false };
 
@@ -885,6 +883,8 @@ const els = {
   hint: document.getElementById('hint'),
   shapeCount: document.getElementById('shape-count'),
   selectedReadout: document.getElementById('selected-readout'),
+  previousShape: document.getElementById('btn-previous-shape'),
+  nextShape: document.getElementById('btn-next-shape'),
   mirrorNote: document.getElementById('mirror-note'),
   undo: document.getElementById('btn-undo'),
   home: document.getElementById('btn-home'),
@@ -976,6 +976,8 @@ function setHint(text) {
         : 'No shape selected';
       els.mirrorNote.hidden = !s || s.twin === null;
       els.undo.disabled = undoStack.length === 0;
+      els.previousShape.disabled = shapes.length === 0;
+      els.nextShape.disabled = shapes.length === 0;
       els.save.disabled = shapes.length === 0;
       els.modelName.disabled = shapes.length === 0;
       els.saveHint.hidden = shapes.length === 0;
@@ -1031,6 +1033,8 @@ els.save.addEventListener('click', download);
 els.copy.addEventListener('click', duplicateSelected);
 els.plate.addEventListener('click', toPlate);
 els.center.addEventListener('click', centerSelected);
+els.previousShape.addEventListener('click', () => selectShapeBy(-1));
+els.nextShape.addEventListener('click', () => selectShapeBy(1));
 
 function duplicateSelected() {
   const s = selected();
