@@ -1,5 +1,5 @@
-document.body.addEventListener("pointerdown", (e) => { console.log("body pointerdown: target id is", e.target.id); try { const r = e.target.getBoundingClientRect(); console.log(`target rect: top=${r.top}, left=${r.left}, bottom=${r.bottom}, right=${r.right}, width=${r.width}, height=${r.height}`); } catch (err) {} }, true);
-document.body.addEventListener("pointerdown", (e) => { console.log("body pointerdown: target id is", e.target.id); }, true);
+import * as THREE from 'three';
+import { OrbitControls } from './vendor/three/OrbitControls.js';
 /*
   Shape Maker — a 3D modelling toy that fits in a kid's hands.
 
