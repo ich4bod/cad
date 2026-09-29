@@ -219,12 +219,13 @@ function checkSTL(bytes, expected = null) {
 }
 
 function report(result, label) {
-  console.log('STL assertions' + (label ? ' — ' + label : ''));
+  const out = process.stderr;
+  out.write('STL assertions' + (label ? ' — ' + label : '') + '\n');
   for (const c of result.checks) {
-    console.log('  ' + (c.ok ? 'PASS' : 'FAIL') + '  ' + c.name + '  [' + c.detail + ']');
+    out.write('  ' + (c.ok ? 'PASS' : 'FAIL') + '  ' + c.name + '  [' + c.detail + ']\n');
   }
-  console.log('  stats: ' + JSON.stringify(result.stats));
-  console.log(result.ok ? '  ALL STL ASSERTIONS PASSED' : '  STL ASSERTIONS FAILED');
+  out.write('  stats: ' + JSON.stringify(result.stats) + '\n');
+  out.write(result.ok ? '  ALL STL ASSERTIONS PASSED\n' : '  STL ASSERTIONS FAILED\n');
   return result.ok;
 }
 
