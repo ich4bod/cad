@@ -74,6 +74,7 @@ let shapes = [];
 let nextId = 1;
 let selectedId = null;
 let mirror = false;
+let paintBuild = false;
 
 const undoStack = [];
 const UNDO_LIMIT = 80;
@@ -634,6 +635,7 @@ function removeSelected() {
 function clearAll() {
   if (!shapes.length) return;
   pushUndo();
+  paintBuild = false;
   shapes = [];
   selectedId = null;
   after('Clean plate. Undo brings everything back.');
@@ -725,15 +727,31 @@ function turnSidewaysSelected() {
 }
 
 function paintSelected(name) {
+  if (!shapes.length) return;
+
+  if (paintBuild) {
+    pushUndo();
+    for (const shape of shapes) shape.paint = name === 'none' ? null : name;
+    paintBuild = false;
+    after(name === 'none' ? 'Unpainted the whole build!' : `Painted the whole build ${name}!`);
+    return;
+  }
+
   const s = selected();
   if (!s) return;
-  const newPaint = s.paint === name ? null : name;
+  const newPaint = name === 'none' ? null : (s.paint === name ? null : name);
   if (newPaint === s.paint) return;
   pushUndo();
   s.paint = newPaint;
   const t = twinOf(s);
   if (t) t.paint = newPaint;
-  after(name ? `Painted ${name}!` : 'Unpainted!');
+  after(name === 'none' || !newPaint ? 'Unpainted!' : `Painted ${name}!`);
+}
+
+function togglePaintBuild() {
+  if (!shapes.length) return;
+  paintBuild = !paintBuild;
+  updateUI();
 }
 
 function undo() {
@@ -1075,6 +1093,7 @@ const els = {
   clear: document.getElementById('btn-clear'),
   starterShelf: document.getElementById('starter-shelf'),
   paint: document.getElementById('paint'),
+  paintBuild: document.getElementById('btn-paint-build'),
   reshape: document.getElementById('reshape'),
   starterModels: document.getElementById('starter-models'),
   starterSnowman: document.getElementById('starter-snowman'),
@@ -1184,15 +1203,22 @@ function setHint(text) {
       els.starterShelf.hidden = shapes.length !== 0;
       els.starterModels.hidden = shapes.length !== 0;
       els.mirror.setAttribute('aria-pressed', String(mirror));
-      els.paint.hidden = !s;
+      els.paint.hidden = shapes.length === 0;
+      els.paintBuild.disabled = shapes.length === 0;
+      els.paintBuild.setAttribute('aria-pressed', String(paintBuild));
+      els.paintBuild.setAttribute('aria-label', paintBuild
+        ? 'Choose a color for every piece'
+        : 'Paint whole build');
+      els.paintBuild.textContent = paintBuild
+        ? 'Choose a color for every piece'
+        : 'Paint whole build';
       els.reshape.hidden = !s;
       for (const button of els.reshape.querySelectorAll('.reshape-kind')) {
         button.setAttribute('aria-pressed', String(!!s && s.kind === button.dataset.kind));
       }
-      if (s) {
-        for (const swatch of els.paint.querySelectorAll('.paint-swatch')) {
-          swatch.setAttribute('aria-pressed', String(s.paint === swatch.dataset.paint));
-        }
+      for (const swatch of els.paint.querySelectorAll('.paint-swatch')) {
+        swatch.disabled = !s && !paintBuild;
+        swatch.setAttribute('aria-pressed', String(!!s && !paintBuild && s.paint === swatch.dataset.paint));
       }
     } catch (err) {
       console.error('CRITICAL: updateUI crashed:', err);
@@ -1205,6 +1231,7 @@ window.duplicateSelected = duplicateSelected;
 for (const btn of document.querySelectorAll('#palette .shape')) {
   btn.addEventListener('click', () => addShape(btn.dataset.kind));
 }
+els.paintBuild.addEventListener('click', togglePaintBuild);
 for (const swatch of els.paint.querySelectorAll('.paint-swatch')) {
   swatch.addEventListener('click', () => paintSelected(swatch.dataset.paint));
 }
@@ -1581,6 +1608,7 @@ window.__cad = {
   shapes: () => shapes.map((s) => ({ ...s })),
   selectedId: () => selectedId,
   mirror: () => mirror,
+  paintBuildEnabled: () => paintBuild,
   undoDepth: () => undoStack.length,
   /** Where a shape's centre lands on screen, so the verifier can drag it with
    *  a real pointer instead of poking at the model behind the UI's back. */
@@ -1640,6 +1668,7 @@ window.addShape = addShape;
 window.duplicateSelected = duplicateSelected;
 window.updateUI = updateUI;
 window.paintSelected = paintSelected;
+window.paintBuildEnabled = () => paintBuild;
 window.reshapeSelected = reshapeSelected;
 window.selectShapeBy = selectShapeBy;
 window.undo = undo;

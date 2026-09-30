@@ -29,7 +29,7 @@
 <link rel="canonical" href="https://cad.ichabod-crane.net/">
 
 <link rel="icon" href="favicon.svg">
-<link rel="stylesheet" href="style.css?v=44">
+<link rel="stylesheet" href="style.css?v=45">
 <script type="importmap">
 {
   "imports": {
@@ -137,12 +137,14 @@
 
     <div id="paint" role="group" aria-label="Paint" hidden>
       <span class="paint-label">Paint</span>
+      <button id="btn-paint-build" type="button" aria-pressed="false" aria-label="Paint whole build" disabled>Paint whole build</button>
       <div class="paint-swatches">
         <button class="paint-swatch" type="button" data-paint="coral" aria-pressed="false" aria-label="Paint coral" style="background-color: #ff6b6b;"></button>
         <button class="paint-swatch" type="button" data-paint="sky" aria-pressed="false" aria-label="Paint sky" style="background-color: #4dabf7;"></button>
         <button class="paint-swatch" type="button" data-paint="leaf" aria-pressed="false" aria-label="Paint leaf" style="background-color: #51cf66;"></button>
         <button class="paint-swatch" type="button" data-paint="sun" aria-pressed="false" aria-label="Paint sun" style="background-color: #ffd43b;"></button>
         <button class="paint-swatch" type="button" data-paint="violet" aria-pressed="false" aria-label="Paint violet" style="background-color: #b197fc;"></button>
+        <button class="paint-swatch paint-unpaint" type="button" data-paint="none" aria-pressed="false" aria-label="Unpaint"></button>
       </div>
     </div>
 
@@ -274,6 +276,6 @@
   <p class="noscript">Shape Maker needs JavaScript switched on — the whole thing runs in your browser, and there is no server to fall back to.</p>
 </noscript>
 
-<script type="module" src="app.js?v=38"></script>
+<script type="module" src="app.js?v=39"></script>
 </body>
 </html>
