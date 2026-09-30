@@ -68,7 +68,8 @@ const PAINTS = {
 
 /** shapes: [{ id, kind, size, gx, gz, level, twin }] — the entire document.
  *  `twin` is the id of this shape's mirrored partner, or null. `lying` is
- *  whether a tube or cone is turned onto its side. */
+ *  whether a tube or cone is turned onto its side. `sideways` is the lying
+ *  axis: z points front-to-back, x points left-to-right. */
 let shapes = [];
 let nextId = 1;
 let selectedId = null;
@@ -185,6 +186,7 @@ function load() {
       twin: int(s.twin),
       paint: s.paint || null,
       lying: s.lying === true,
+      sideways: s.sideways === 'x' ? 'x' : 'z',
     });
   }
 
@@ -359,7 +361,11 @@ function syncScene() {
       mesh.material.color.setHex(s.paint ? PAINTS[s.paint] : KINDS[s.kind].colour);
     }
     placeMesh(mesh, s);
-    mesh.rotation.x = canLie(s) && s.lying ? Math.PI / 2 : 0;
+    mesh.rotation.set(0, 0, 0);
+    if (canLie(s) && s.lying) {
+      if (s.sideways === 'x') mesh.rotation.z = Math.PI / 2;
+      else mesh.rotation.x = Math.PI / 2;
+    }
     // A mirrored twin lights up with the shape you picked, because the next
     // thing you do is going to happen to both of them.
     mesh.children[0].visible =
@@ -444,7 +450,7 @@ function freeCell(paired) {
 function buildSnowman() {
   if (shapes.length > 0) return;
   pushUndo();
-  const s1 = { id: nextId++, kind: 'ball', size: 50, gx: 0, gz: 0, level: 0, twin: null, paint: null, lying: false };
+  const s1 = { id: nextId++, kind: 'ball', size: 50, gx: 0, gz: 0, level: 0, twin: null, paint: null, lying: false, sideways: 'z' };
   const s2 = { id: nextId++, kind: 'ball', size: 40, gx: 0, gz: 0, level: 5, twin: null, paint: null, lying: false };
   const s3 = { id: nextId++, kind: 'ball', size: 30, gx: 0, gz: 0, level: 9, twin: null, paint: null, lying: false };
   shapes.push(s1, s2, s3);
@@ -459,7 +465,7 @@ function buildRobot() {
   }
   console.log('buildRobot: starting build');
   pushUndo();
-  const s1 = { id: nextId++, kind: 'cube', size: 50, gx: 0, gz: 0, level: 0, twin: null, paint: null, lying: false };
+  const s1 = { id: nextId++, kind: 'cube', size: 50, gx: 0, gz: 0, level: 0, twin: null, paint: null, lying: false, sideways: 'z' };
   const s2 = { id: nextId++, kind: 'cube', size: 30, gx: 0, gz: 0, level: 5, twin: null, paint: null, lying: false };
   const s3 = { id: nextId++, kind: 'tube', size: 20, gx: -3, gz: 0, level: 1, twin: null, paint: null, lying: false };
   const s4 = { id: nextId++, kind: 'tube', size: 20, gx: 3, gz: 0, level: 1, twin: s3.id, paint: null, lying: false };
@@ -473,7 +479,7 @@ function buildRobot() {
 function buildRocket() {
   if (shapes.length > 0) return;
   pushUndo();
-  const s1 = { id: nextId++, kind: 'tube', size: 40, gx: 0, gz: 0, level: 0, twin: null, paint: null, lying: false };
+  const s1 = { id: nextId++, kind: 'tube', size: 40, gx: 0, gz: 0, level: 0, twin: null, paint: null, lying: false, sideways: 'z' };
   const s2 = { id: nextId++, kind: 'cone', size: 40, gx: 0, gz: 0, level: 4, twin: null, paint: null, lying: false };
   const s3 = { id: nextId++, kind: 'cube', size: 20, gx: -3, gz: 0, level: 0, twin: null, paint: null, lying: false };
   const s4 = { id: nextId++, kind: 'cube', size: 20, gx: 3, gz: 0, level: 0, twin: s3.id, paint: null, lying: false };
@@ -486,7 +492,7 @@ function buildRocket() {
 function buildCar() {
   if (shapes.length > 0) return;
   pushUndo();
-  const s1 = { id: nextId++, kind: 'cube', size: 40, gx: -2, gz: 0, level: 2, twin: null, paint: null, lying: false };
+  const s1 = { id: nextId++, kind: 'cube', size: 40, gx: -2, gz: 0, level: 2, twin: null, paint: null, lying: false, sideways: 'z' };
   const s2 = { id: nextId++, kind: 'cube', size: 40, gx: 2, gz: 0, level: 2, twin: null, paint: null, lying: false };
   const s3 = { id: nextId++, kind: 'tube', size: 20, gx: -2, gz: -3, level: 0, twin: null, paint: null, lying: true };
   const s4 = { id: nextId++, kind: 'tube', size: 20, gx: -2, gz: 3, level: 0, twin: s3.id, paint: null, lying: true };
@@ -502,7 +508,7 @@ function buildCar() {
 function buildCastle() {
   if (shapes.length > 0) return;
   pushUndo();
-  const s1 = { id: nextId++, kind: 'cube', size: 30, gx: -3, gz: 0, level: 0, twin: null, paint: null, lying: false };
+  const s1 = { id: nextId++, kind: 'cube', size: 30, gx: -3, gz: 0, level: 0, twin: null, paint: null, lying: false, sideways: 'z' };
   const s2 = { id: nextId++, kind: 'cube', size: 30, gx: -3, gz: 0, level: 3, twin: null, paint: null, lying: false };
   const s3 = { id: nextId++, kind: 'cone', size: 30, gx: -3, gz: 0, level: 6, twin: null, paint: null, lying: false };
   const s4 = { id: nextId++, kind: 'cube', size: 30, gx: 3, gz: 0, level: 0, twin: null, paint: null, lying: false };
@@ -519,7 +525,7 @@ function addShape(kind) {
   try {
     pushUndo();
     const { gx, gz } = freeCell(mirror);
-    const s = { id: nextId++, kind, size: SIZE_DEFAULT, gx, gz, level: 0, twin: null, paint: null, lying: false };
+    const s = { id: nextId++, kind, size: SIZE_DEFAULT, gx, gz, level: 0, twin: null, paint: null, lying: false, sideways: 'z' };
     shapes.push(s);
     selectedId = s.id;
     if (mirror) {
@@ -666,6 +672,16 @@ function turnSelected() {
   after(s.lying ? 'Lying down.' : 'Standing up.');
 }
 
+function turnSidewaysSelected() {
+  const s = selected();
+  if (!canLie(s) || !s.lying) return;
+  pushUndo();
+  s.sideways = s.sideways === 'x' ? 'z' : 'x';
+  const t = twinOf(s);
+  if (t) t.sideways = s.sideways;
+  after(s.sideways === 'x' ? 'Now it points left to right.' : 'Now it points front to back.');
+}
+
 function paintSelected(name) {
   const s = selected();
   if (!s) return;
@@ -689,6 +705,7 @@ function undo() {
  *  path that changes state already comes through here. The exception is a
  *  drag, which moves a shape a frame at a time and saves once on pointerup. */
 function after(message) {
+  for (const s of shapes) if (s.sideways !== 'x') s.sideways = 'z';
   syncScene();
   updateUI();
   save();
@@ -898,7 +915,10 @@ function exportTriangles() {
   for (const s of shapes) {
     const weld = weldFor(s);
     const f = (s.size + weld) / s.size;
-    q.setFromEuler(new THREE.Euler(canLie(s) && s.lying ? Math.PI / 2 : 0, 0, 0));
+    const rotation = canLie(s) && s.lying
+      ? (s.sideways === 'x' ? new THREE.Euler(0, 0, Math.PI / 2) : new THREE.Euler(Math.PI / 2, 0, 0))
+      : new THREE.Euler(0, 0, 0);
+    q.setFromEuler(rotation);
     // Grown about its own centre, then lifted by half the growth so the
     // bottom face stays exactly where the kid put it, on the plate.
     pos.set(s.gx * GRID, centreY(s) + weld / 2, s.gz * GRID);
@@ -994,6 +1014,7 @@ const els = {
   plate: document.getElementById('btn-plate'),
   center: document.getElementById('btn-center'),
   turn: document.getElementById('btn-turn'),
+  turnSideways: document.getElementById('btn-turn-sideways'),
   tour: document.getElementById('tour'),
   tourCount: document.getElementById('tour-count'),
   tourTitle: document.getElementById('tour-title'),
@@ -1104,6 +1125,7 @@ function setHint(text) {
       const turnLabel = canLie(s) && s.lying ? 'Stand up' : 'Lay down';
       els.turn.setAttribute('aria-label', turnLabel);
       els.turn.querySelector('span').textContent = turnLabel;
+      els.turnSideways.disabled = !canLie(s) || !s.lying;
       els.clear.disabled = shapes.length === 0;
       els.fit.disabled = shapes.length === 0;
       els.starterShelf.hidden = shapes.length !== 0;
@@ -1160,6 +1182,7 @@ els.unpair.addEventListener('click', unpairSelected);
 els.plate.addEventListener('click', toPlate);
 els.center.addEventListener('click', centerSelected);
 els.turn.addEventListener('click', turnSelected);
+els.turnSideways.addEventListener('click', turnSidewaysSelected);
 els.previousShape.addEventListener('click', () => selectShapeBy(-1));
 els.nextShape.addEventListener('click', () => selectShapeBy(1));
 
@@ -1533,6 +1556,10 @@ window.__cad = {
   },
   cameraPos: () => ({ x: camera.position.x, y: camera.position.y, z: camera.position.z }),
   cameraTarget: () => ({ x: controls.target.x, y: controls.target.y, z: controls.target.z }),
+  rotationOf: (id) => {
+    const mesh = meshes.get(id);
+    return mesh ? { x: mesh.rotation.x, y: mesh.rotation.y, z: mesh.rotation.z } : null;
+  },
   fitView,
   renderedBounds,
   /** The autosave, as the verifier sees it: where it lives, and what is in it
