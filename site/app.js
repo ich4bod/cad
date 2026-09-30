@@ -520,6 +520,18 @@ function buildCastle() {
   after('A little castle! Raise the bridge or change the towers.');
 }
 
+function buildAirplane() {
+  if (shapes.length > 0) return;
+  pushUndo();
+  const s1 = { id: nextId++, kind: 'cube', size: 60, gx: 0, gz: 1, level: 0, twin: null, paint: null, lying: false, sideways: 'z' };
+  const s2 = { id: nextId++, kind: 'tube', size: 80, gx: 0, gz: 0, level: 2, twin: null, paint: null, lying: true, sideways: 'x' };
+  const s3 = { id: nextId++, kind: 'cone', size: 40, gx: 0, gz: -4, level: 2, twin: null, paint: null, lying: true, sideways: 'z' };
+  const s4 = { id: nextId++, kind: 'cone', size: 30, gx: 0, gz: 4, level: 2, twin: null, paint: null, lying: true, sideways: 'z' };
+  shapes.push(s1, s2, s3, s4);
+  selectedId = s1.id;
+  after('A little airplane! Turn the wing or reshape the tail.');
+}
+
 window.addShape = addShape;
 function addShape(kind) {
   try {
@@ -1036,6 +1048,7 @@ const els = {
   starterRocket: document.getElementById('starter-rocket'),
   starterCar: document.getElementById('starter-car'),
   starterCastle: document.getElementById('starter-castle'),
+  starterAirplane: document.getElementById('starter-airplane'),
 };
 
 /* A first visit gets four concrete gestures, not a mode or a lesson screen.
@@ -1170,6 +1183,7 @@ els.starterRobot.addEventListener('click', buildRobot);
 els.starterRocket.addEventListener('click', buildRocket);
 els.starterCar.addEventListener('click', buildCar);
 els.starterCastle.addEventListener('click', buildCastle);
+els.starterAirplane.addEventListener('click', buildAirplane);
 els.undo.addEventListener('click', undo);
 els.home.addEventListener('click', resetView);
 els.fit.addEventListener('click', fitView);
