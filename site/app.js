@@ -267,8 +267,8 @@ controls.target.set(0, 15, 0);
 controls.enableDamping = true;
 controls.dampingFactor = 0.12;
 controls.enablePan = false;          // panning is how a kid loses the model
-controls.minDistance = 70;
-controls.maxDistance = 420;
+controls.minDistance = 60;
+controls.maxDistance = 900;
 controls.maxPolarAngle = Math.PI / 2 - 0.05;   // never go under the floor
 controls.update();
 const initialCamera = camera.position.clone();
@@ -965,6 +965,7 @@ const els = {
   mirrorNote: document.getElementById('mirror-note'),
   undo: document.getElementById('btn-undo'),
   home: document.getElementById('btn-home'),
+  fit: document.getElementById('btn-fit'),
   save: document.getElementById('btn-download'),
   modelName: document.getElementById('model-name'),
   saveHint: document.getElementById('save-hint'),
@@ -1088,6 +1089,7 @@ function setHint(text) {
       els.turn.setAttribute('aria-label', turnLabel);
       els.turn.querySelector('span').textContent = turnLabel;
       els.clear.disabled = shapes.length === 0;
+      els.fit.disabled = shapes.length === 0;
       els.starterShelf.hidden = shapes.length !== 0;
       els.starterModels.hidden = shapes.length !== 0;
       els.mirror.setAttribute('aria-pressed', String(mirror));
@@ -1131,6 +1133,7 @@ els.starterRocket.addEventListener('click', buildRocket);
 els.starterCar.addEventListener('click', buildCar);
 els.undo.addEventListener('click', undo);
 els.home.addEventListener('click', resetView);
+els.fit.addEventListener('click', fitView);
 els.save.addEventListener('click', download);
 els.copy.addEventListener('click', duplicateSelected);
 els.stackCopy.addEventListener('click', stackCopy);
@@ -1328,6 +1331,88 @@ function resetView() {
   setHint('View reset.');
 }
 
+function fitView() {
+  if (!shapes.length) return;
+
+  syncScene();
+  const bounds = new THREE.Box3();
+  for (const mesh of meshes.values()) {
+    mesh.updateWorldMatrix(true, false);
+    if (!mesh.geometry.boundingBox) mesh.geometry.computeBoundingBox();
+    const shapeBounds = mesh.geometry.boundingBox.clone().applyMatrix4(mesh.matrixWorld);
+    bounds.union(shapeBounds);
+  }
+  if (bounds.isEmpty()) return;
+
+  const sphere = bounds.getBoundingSphere(new THREE.Sphere());
+  const direction = camera.position.clone().sub(controls.target);
+  if (direction.lengthSq() === 0) return;
+  direction.normalize();
+
+  const verticalHalf = THREE.MathUtils.degToRad(camera.fov / 2);
+  const horizontalHalf = Math.atan(Math.tan(verticalHalf) * camera.aspect);
+  const limitingHalf = Math.min(verticalHalf, horizontalHalf);
+  const distance = clamp(sphere.radius / Math.sin(limitingHalf) * 1.18, 60, 900);
+
+  controls.target.copy(sphere.center);
+  camera.position.copy(sphere.center).add(direction.multiplyScalar(distance));
+
+  const nearest = Math.max(0.01, distance - sphere.radius);
+  const farthest = distance + sphere.radius;
+  if (camera.near > nearest) {
+    camera.near = Math.max(0.01, nearest * 0.5);
+  }
+  if (camera.far < farthest) {
+    camera.far = farthest * 2;
+  }
+  camera.updateProjectionMatrix();
+
+  const damping = controls.enableDamping;
+  controls.enableDamping = false;
+  controls.update();
+  controls.enableDamping = damping;
+  renderer.render(scene, camera);
+}
+
+function renderedBounds() {
+  const bounds = new THREE.Box3();
+  const projected = [];
+  const rect = canvas.getBoundingClientRect();
+  for (const mesh of meshes.values()) {
+    mesh.updateWorldMatrix(true, false);
+    if (!mesh.geometry.boundingBox) mesh.geometry.computeBoundingBox();
+    const shapeBounds = mesh.geometry.boundingBox.clone().applyMatrix4(mesh.matrixWorld);
+    bounds.union(shapeBounds);
+
+    const points = [];
+    for (const x of [shapeBounds.min.x, shapeBounds.max.x]) {
+      for (const y of [shapeBounds.min.y, shapeBounds.max.y]) {
+        for (const z of [shapeBounds.min.z, shapeBounds.max.z]) {
+          const point = new THREE.Vector3(x, y, z).project(camera);
+          points.push({
+            x: ((point.x + 1) / 2) * rect.width,
+            y: ((1 - point.y) / 2) * rect.height,
+          });
+        }
+      }
+    }
+    projected.push({
+      id: mesh.userData.id,
+      left: Math.min(...points.map((point) => point.x)),
+      right: Math.max(...points.map((point) => point.x)),
+      top: Math.min(...points.map((point) => point.y)),
+      bottom: Math.max(...points.map((point) => point.y)),
+    });
+  }
+  return {
+    world: {
+      min: { x: bounds.min.x, y: bounds.min.y, z: bounds.min.z },
+      max: { x: bounds.max.x, y: bounds.max.y, z: bounds.max.z },
+    },
+    projected,
+  };
+}
+
 // The canvas offers inspection without taking keyboard access away from the
 // ordinary buttons: brackets choose shapes, arrows turn the camera, Home resets.
 window.addEventListener('keydown', (e) => {
@@ -1431,6 +1516,8 @@ window.__cad = {
   },
   cameraPos: () => ({ x: camera.position.x, y: camera.position.y, z: camera.position.z }),
   cameraTarget: () => ({ x: controls.target.x, y: controls.target.y, z: controls.target.z }),
+  fitView,
+  renderedBounds,
   /** The autosave, as the verifier sees it: where it lives, and what is in it
    *  right now without going through the app's own parser. */
   nextId: () => nextId,

@@ -306,6 +306,8 @@ button:disabled {
 
 .tool-clear:not(:disabled) { color: #a32f2f; border-color: #ffc9c2; background: #fff0ed; }
 .tool-turn:not(:disabled) { color: #1c7ed6; border-color: #a5d8ff; background: #f1f8ff; }
+.tool-fit:not(:disabled) { color: var(--focus); border-color: #a5d8ff; background: #ffffff; }
+.tool-fit span { color: var(--ink); font-size: 11px; }
 
 /* The chosen shape's palette button is not a mode — nothing stays pressed.
    Only the "which shape is selected in the scene" state is shown, and it is
