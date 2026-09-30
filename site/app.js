@@ -1135,6 +1135,7 @@ function finishTour() {
   document.body.removeAttribute('data-tour-active');
   tourTarget = null;
   els.tour.hidden = true;
+  updateStarterSpace();
   try { store?.setItem(TOUR_KEY, 'done'); } catch (e) { /* the tour is optional */ }
 }
 
@@ -1148,6 +1149,7 @@ function showTourStep() {
   els.tourTitle.textContent = step.title;
   els.tourCopy.textContent = step.copy;
   els.tourNext.textContent = tourStep === tourSteps.length - 1 ? 'Start making' : 'Next';
+  updateStarterSpace();
 }
 
 function startTour() {
@@ -1164,6 +1166,24 @@ els.tourNext.addEventListener('click', () => {
   if (tourStep === tourSteps.length - 1) finishTour();
   else { tourStep += 1; showTourStep(); }
 });
+
+function updateStarterSpace() {
+  const top = document.getElementById('topbar').getBoundingClientRect();
+  const bottom = document.getElementById('bottombar').getBoundingClientRect();
+  const tourRect = els.tour.getBoundingClientRect();
+  const tourVisible = !els.tour.hidden && tourRect.bottom > 0 && tourRect.top < window.innerHeight;
+  const lowerBoundary = Math.min(bottom.top, tourVisible ? tourRect.top : window.innerHeight);
+  const trayBottom = Math.max(0, window.innerHeight - (lowerBoundary - 16));
+  const maxHeight = Math.max(44, lowerBoundary - 16 - (top.bottom + 16));
+  const bottomValue = `${trayBottom}px`;
+  const heightValue = `${maxHeight}px`;
+  if (document.documentElement.style.getPropertyValue('--starter-bottom') !== bottomValue) {
+    document.documentElement.style.setProperty('--starter-bottom', bottomValue);
+  }
+  if (document.documentElement.style.getPropertyValue('--starter-max-height') !== heightValue) {
+    document.documentElement.style.setProperty('--starter-max-height', heightValue);
+  }
+}
 
 function setHint(text) {
   els.hint.textContent = text ||
@@ -1216,6 +1236,7 @@ function setHint(text) {
       els.fit.disabled = shapes.length === 0;
       els.starterShelf.hidden = shapes.length !== 0;
       els.starterModels.hidden = shapes.length !== 0;
+      updateStarterSpace();
       els.mirror.setAttribute('aria-pressed', String(mirror));
       els.paint.hidden = shapes.length === 0;
       els.paintBuild.disabled = shapes.length === 0;
@@ -1241,6 +1262,14 @@ function setHint(text) {
   }
 window.updateUI = updateUI;
 window.duplicateSelected = duplicateSelected;
+
+window.addEventListener('resize', updateStarterSpace);
+const starterSpaceObserver = new ResizeObserver(updateStarterSpace);
+for (const element of [
+  document.getElementById('topbar'),
+  document.getElementById('bottombar'),
+  els.tour,
+]) starterSpaceObserver.observe(element);
 
 for (const btn of document.querySelectorAll('#palette .shape')) {
   btn.addEventListener('click', () => addShape(btn.dataset.kind));

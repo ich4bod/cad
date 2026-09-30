@@ -598,24 +598,44 @@ button:disabled {
 }
 
 #starter-models {
+  position: fixed;
+  z-index: 2;
+  left: 50%;
+  bottom: var(--starter-bottom, 16px);
+  transform: translateX(-50%);
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  flex-wrap: wrap;
   align-items: center;
+  justify-content: center;
   gap: 8px;
+  width: min(520px, calc(100vw - 32px));
+  max-height: var(--starter-max-height, calc(100vh - 32px));
+  overflow-y: auto;
   padding: 10px;
+  color: var(--ink-soft);
   background: #fff;
   border-radius: 10px;
   box-shadow: var(--shadow);
 }
 
 #starter-heading {
+  flex: 0 0 100%;
   margin: 0;
   font-size: 12px;
   color: #536174;
   font-weight: 700;
+  text-align: center;
 }
 
-#starter-snowman, #starter-castle, #starter-sailboat {
+#starter-models button {
+  flex: 1 1 140px;
+  min-width: 0;
+  min-height: 44px;
+  height: 48px;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
   font: inherit;
   color: #243042;
   border: 2px solid #243042;
@@ -623,47 +643,15 @@ button:disabled {
   background: #4dabf7;
   box-shadow: var(--shadow);
   cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-  min-width: 74px;
-  min-height: 44px;
-  padding: 6px 10px;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
   transition: transform .06s ease, background-color .12s ease, opacity .12s ease;
 }
 
-#starter-snowman:active:not(:disabled), #starter-castle:active:not(:disabled), #starter-sailboat:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 rgba(29,36,51,.13); }
-
+#starter-models button:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 rgba(29,36,51,.13); }
 #starter-castle { background: #ffd43b; }
 
-@media (max-width: 640px) {
-  #bottombar {
-    overflow-x: hidden;
-    justify-content: flex-start;
-  }
-  #starter-models {
-    position: fixed;
-    left: 10px;
-    right: 10px;
-    bottom: 160px;
-    flex: 0 1 100%;
-    width: calc(100vw - 20px);
-    min-width: 0;
-    margin: 0;
-    flex-direction: row;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-  #starter-heading {
-    flex-basis: 100%;
-    text-align: center;
-  }
-
-  [data-tour-active="true"] #starter-models {
-    bottom: 210px;
-  }
+@media (max-width: 720px) {
+  #starter-models { width: calc(100vw - 20px); }
+  #starter-models button { min-height: 44px; }
 }
