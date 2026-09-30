@@ -62,7 +62,7 @@ async function main() {
     // Ordinary Unpaint still clears a selected mirrored pair together.
     await page.click('#btn-clear');
     await page.click('#btn-mirror');
-    await page.locator('.shape[data-kind="ball"]').click({ force: true });
+    await page.evaluate(() => document.querySelector('.shape[data-kind="ball"]').click());
     const pair = (await shapes()).filter((shape) => shape.kind === 'ball');
     assert(pair.length === 2 && pair.every((shape) => shape.twin !== null), 'Mirror ball pair was not created');
     await page.click('[data-paint="sun"]');
