@@ -29,7 +29,7 @@
 <link rel="canonical" href="https://cad.ichabod-crane.net/">
 
 <link rel="icon" href="favicon.svg">
-<link rel="stylesheet" href="style.css?v=43">
+<link rel="stylesheet" href="style.css?v=44">
 <script type="importmap">
 {
   "imports": {
@@ -231,6 +231,25 @@
         <span>Delete</span>
       </button>
       </div>
+      <div id="move-build" role="group" aria-label="Move build">
+        <span class="move-build-label">Move build</span>
+        <button id="btn-build-left" class="tool tool-move-build" type="button" aria-label="Build left" disabled>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M10 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>Build left</span>
+        </button>
+        <button id="btn-build-forward" class="tool tool-move-build" type="button" aria-label="Build forward" disabled>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M6 10l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>Build forward</span>
+        </button>
+        <button id="btn-build-back" class="tool tool-move-build" type="button" aria-label="Build back" disabled>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M6 14l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>Build back</span>
+        </button>
+        <button id="btn-build-right" class="tool tool-move-build" type="button" aria-label="Build right" disabled>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M14 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>Build right</span>
+        </button>
+      </div>
     </div>
 
     <a id="backlink" href="https://ichabod-crane.net/">
@@ -255,6 +274,6 @@
   <p class="noscript">Shape Maker needs JavaScript switched on — the whole thing runs in your browser, and there is no server to fall back to.</p>
 </noscript>
 
-<script type="module" src="app.js?v=37"></script>
+<script type="module" src="app.js?v=38"></script>
 </body>
 </html>

@@ -244,7 +244,7 @@ html, body {
 
 #edit {
   display: grid;
-  grid-template-columns: 96px minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: 96px minmax(0, 1fr) minmax(0, 1fr) 296px;
   gap: 8px;
   align-items: stretch;
   flex: 1 1 600px;
@@ -252,7 +252,7 @@ html, body {
   overflow: hidden;
 }
 
-#symmetry, #edit-position, #edit-making {
+#symmetry, #edit-position, #edit-making, #move-build {
   display: flex;
   min-width: 0;
   gap: 8px;
@@ -265,6 +265,20 @@ html, body {
 #edit-position, #edit-making {
   flex-wrap: wrap;
   align-content: flex-start;
+}
+
+#move-build {
+  flex-wrap: nowrap;
+  align-items: stretch;
+}
+
+.move-build-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
 }
 
 #edit .tool {
@@ -525,7 +539,7 @@ button:disabled {
     justify-content: flex-start;
     align-items: stretch;
   }
-  #symmetry, #edit-position, #edit-making {
+  #symmetry, #edit-position, #edit-making, #move-build {
     flex: 0 0 auto;
     flex-wrap: nowrap;
     align-items: stretch;
@@ -533,6 +547,7 @@ button:disabled {
   }
   #edit-position, #edit-making { align-content: normal; }
   #edit .tool { flex: 0 0 68px; }
+  #move-build .tool { flex: 0 0 68px; }
   #symmetry .tool { flex: 0 0 96px; }
   button { min-width: 62px; min-height: 62px; padding: 5px 7px; }
   .shape { min-width: 68px; min-height: 68px; }

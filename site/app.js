@@ -392,6 +392,13 @@ const footprint = (size, gx, gz) => [
   gz * GRID - size / 2, gz * GRID + size / 2,
 ];
 
+// The lying direction is part of a record's footprint. These primitives are
+// round in the two directions, so a turned tube or cone still occupies the
+// same square; keeping the record here makes the boundary check use the live
+// orientation rather than a guessed default.
+const footprintFor = (s, gx = s.gx, gz = s.gz) =>
+  footprint(s.size, gx, gz, s.lying, s.sideways);
+
 const overlaps = (a, b, gap) =>
   a[0] < b[1] + gap && b[0] < a[1] + gap && a[2] < b[3] + gap && b[2] < a[3] + gap;
 
@@ -630,6 +637,29 @@ function clearAll() {
   shapes = [];
   selectedId = null;
   after('Clean plate. Undo brings everything back.');
+}
+
+const plateMin = -BOARD * GRID;
+const plateMax = BOARD * GRID;
+
+function canMoveBuild(dx, dz) {
+  if (!shapes.length) return false;
+  return shapes.every((s) => {
+    const box = footprintFor(s, s.gx + dx, s.gz + dz);
+    return box[0] >= plateMin && box[1] <= plateMax &&
+      box[2] >= plateMin && box[3] <= plateMax;
+  });
+}
+
+function moveBuild(dx, dz) {
+  if (!canMoveBuild(dx, dz)) return false;
+  pushUndo();
+  for (const s of shapes) {
+    s.gx += dx;
+    s.gz += dz;
+  }
+  after('Moved the whole build.');
+  return true;
 }
 
 /*
@@ -1038,6 +1068,10 @@ const els = {
   besideCopy: document.getElementById('btn-beside-copy'),
   drop: document.getElementById('btn-drop'),
   unpair: document.getElementById('btn-unpair'),
+  buildLeft: document.getElementById('btn-build-left'),
+  buildForward: document.getElementById('btn-build-forward'),
+  buildBack: document.getElementById('btn-build-back'),
+  buildRight: document.getElementById('btn-build-right'),
   clear: document.getElementById('btn-clear'),
   starterShelf: document.getElementById('starter-shelf'),
   paint: document.getElementById('paint'),
@@ -1141,6 +1175,10 @@ function setHint(text) {
       els.turn.setAttribute('aria-label', turnLabel);
       els.turn.querySelector('span').textContent = turnLabel;
       els.turnSideways.disabled = !canLie(s) || !s.lying;
+      els.buildLeft.disabled = !canMoveBuild(-1, 0);
+      els.buildForward.disabled = !canMoveBuild(0, -1);
+      els.buildBack.disabled = !canMoveBuild(0, 1);
+      els.buildRight.disabled = !canMoveBuild(1, 0);
       els.clear.disabled = shapes.length === 0;
       els.fit.disabled = shapes.length === 0;
       els.starterShelf.hidden = shapes.length !== 0;
@@ -1195,6 +1233,10 @@ els.stackCopy.addEventListener('click', stackCopy);
 els.besideCopy.addEventListener('click', besideCopy);
 els.drop.addEventListener('click', dropSelected);
 els.unpair.addEventListener('click', unpairSelected);
+els.buildLeft.addEventListener('click', () => moveBuild(-1, 0));
+els.buildForward.addEventListener('click', () => moveBuild(0, -1));
+els.buildBack.addEventListener('click', () => moveBuild(0, 1));
+els.buildRight.addEventListener('click', () => moveBuild(1, 0));
 els.plate.addEventListener('click', toPlate);
 els.center.addEventListener('click', centerSelected);
 els.turn.addEventListener('click', turnSelected);
@@ -1577,6 +1619,7 @@ window.__cad = {
     return mesh ? { x: mesh.rotation.x, y: mesh.rotation.y, z: mesh.rotation.z } : null;
   },
   fitView,
+  moveBuild,
   renderedBounds,
   /** The autosave, as the verifier sees it: where it lives, and what is in it
    *  right now without going through the app's own parser. */
