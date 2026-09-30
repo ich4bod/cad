@@ -16,7 +16,7 @@ async function main() {
 
   const shapes = () => page.evaluate(() => window.__cad.shapes());
   const paint = async (id, name) => {
-    await page.evaluate((shapeId) => window.__cad.selectShapeById(shapeId), id);
+    await page.evaluate((shapeId) => window.selectShapeById(shapeId), id);
     await page.click(`[data-paint="${name}"]`);
   };
   const paintsById = async () => page.evaluate(() =>
@@ -52,7 +52,7 @@ async function main() {
     assert(JSON.stringify(await paintsById()) === JSON.stringify(mixed), 'One Undo did not restore mixed colors');
 
     // Whole-build Unpaint works with no selection and has its distinct hint.
-    await page.evaluate(() => window.__cad.selectShapeById(null));
+    await page.evaluate(() => window.selectShapeById(null));
     assert(await page.locator('#btn-paint-build').isEnabled(), 'Whole-build toggle was unavailable without selection');
     await page.click('#btn-paint-build');
     await page.click('[data-paint="none"]');
