@@ -540,6 +540,19 @@ function buildAirplane() {
   after('A little airplane! Turn the wing or reshape the tail.');
 }
 
+function buildSailboat() {
+  if (shapes.length > 0) return;
+  pushUndo();
+  const s1 = { id: nextId++, kind: 'cube', size: 80, gx: 0, gz: 0, level: 0, twin: null, paint: 'sky', lying: false, sideways: 'z' };
+  const s2 = { id: nextId++, kind: 'tube', size: 50, gx: 0, gz: 0, level: 8, twin: null, paint: 'coral', lying: false, sideways: 'z' };
+  const s3 = { id: nextId++, kind: 'cone', size: 40, gx: 0, gz: -6, level: 2, twin: null, paint: 'sky', lying: true, sideways: 'z' };
+  const s4 = { id: nextId++, kind: 'cube', size: 40, gx: 2, gz: 0, level: 9, twin: null, paint: 'sun', lying: false, sideways: 'z' };
+  const s5 = { id: nextId++, kind: 'cube', size: 30, gx: -2, gz: 0, level: 10, twin: null, paint: 'sun', lying: false, sideways: 'z' };
+  shapes.push(s1, s2, s3, s4, s5);
+  selectedId = s2.id;
+  after('A little sailboat! Move it across the plate or repaint every piece.');
+}
+
 window.addShape = addShape;
 function addShape(kind) {
   try {
@@ -1102,6 +1115,7 @@ const els = {
   starterCar: document.getElementById('starter-car'),
   starterCastle: document.getElementById('starter-castle'),
   starterAirplane: document.getElementById('starter-airplane'),
+  starterSailboat: document.getElementById('starter-sailboat'),
 };
 
 /* A first visit gets four concrete gestures, not a mode or a lesson screen.
@@ -1251,6 +1265,7 @@ els.starterRocket.addEventListener('click', buildRocket);
 els.starterCar.addEventListener('click', buildCar);
 els.starterCastle.addEventListener('click', buildCastle);
 els.starterAirplane.addEventListener('click', buildAirplane);
+els.starterSailboat.addEventListener('click', buildSailboat);
 els.undo.addEventListener('click', undo);
 els.home.addEventListener('click', resetView);
 els.fit.addEventListener('click', fitView);
