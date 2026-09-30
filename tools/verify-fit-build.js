@@ -26,6 +26,44 @@ async function runViewport(browser, viewport) {
     await page.waitForFunction(() => window.__cad?.ready);
     if (await page.isVisible('#tour')) await page.click('#tour-skip', { force: true });
 
+    const editLayout = await page.evaluate(() => {
+      const shelf = document.querySelector('#edit');
+      const buttons = [...shelf.querySelectorAll('button')];
+      const shelfRect = shelf.getBoundingClientRect();
+      const buttonRects = buttons.map((button) => {
+        const rect = button.getBoundingClientRect();
+        return { id: button.id, left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom };
+      });
+      return {
+        shelf: { left: shelfRect.left, top: shelfRect.top, right: shelfRect.right, bottom: shelfRect.bottom },
+        buttons: buttonRects,
+        scrollWidth: shelf.scrollWidth,
+        clientWidth: shelf.clientWidth,
+        pageWidth: Math.max(document.documentElement.scrollWidth, document.body.scrollWidth),
+        viewportWidth: window.innerWidth,
+      };
+    });
+    if (viewport.width > 700) {
+      for (const button of editLayout.buttons) {
+        if (button.left < editLayout.shelf.left - 1 || button.right > editLayout.shelf.right + 1 || button.top < editLayout.shelf.top - 1 || button.bottom > editLayout.shelf.bottom + 1 || button.left < 0 || button.right > editLayout.viewportWidth) {
+          fail(`edit button was clipped at ${viewport.width}x${viewport.height}: ${JSON.stringify(button)}`);
+        }
+      }
+    } else {
+      if (editLayout.scrollWidth <= editLayout.clientWidth) fail(`phone edit shelf did not overflow at ${viewport.width}x${viewport.height}`);
+      if (editLayout.pageWidth > editLayout.viewportWidth) fail(`phone page has horizontal overflow at ${viewport.width}x${viewport.height}: ${editLayout.pageWidth}px`);
+      const beside = await page.evaluate(() => {
+        const shelf = document.querySelector('#edit');
+        shelf.scrollLeft = shelf.scrollWidth;
+        const shelfRect = shelf.getBoundingClientRect();
+        const buttonRect = document.querySelector('#btn-beside-copy').getBoundingClientRect();
+        return { shelfRight: shelfRect.right, buttonLeft: buttonRect.left, buttonRight: buttonRect.right };
+      });
+      if (beside.buttonLeft < -1 || beside.buttonRight > beside.shelfRight + 1) {
+        fail(`Beside copy was not wholly visible after scrolling the phone edit shelf at ${viewport.width}x${viewport.height}: ${JSON.stringify(beside)}`);
+      }
+    }
+
     const state = () => page.evaluate(() => ({
       shapes: window.__cad.shapes(),
       selected: window.__cad.selectedId(),
@@ -137,7 +175,7 @@ async function runViewport(browser, viewport) {
 (async () => {
   const browser = await chromium.launch({ args: ['--no-sandbox'] });
   try {
-    await runViewport(browser, { width: 1200, height: 900 });
+    await runViewport(browser, { width: 1280, height: 900 });
     await runViewport(browser, { width: 390, height: 844 });
   } finally {
     await browser.close();

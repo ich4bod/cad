@@ -29,7 +29,7 @@
 <link rel="canonical" href="https://cad.ichabod-crane.net/">
 
 <link rel="icon" href="favicon.svg">
-<link rel="stylesheet" href="style.css?v=34">
+<link rel="stylesheet" href="style.css?v=39">
 <script type="importmap">
 {
   "imports": {
@@ -129,13 +129,6 @@
 
     </div>
 
-    <div id="symmetry" role="group" aria-label="Mirror new shapes">
-      <button id="btn-mirror" class="tool tool-mirror" type="button" aria-pressed="false">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5v19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-dasharray="2.4 3.1"/><path d="M9.2 5.5 3.5 12l5.7 6.5Z" fill="currentColor"/><path d="M14.8 5.5 20.5 12l-5.7 6.5Z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg>
-        <span>Mirror</span>
-      </button>
-    </div>
-
     <div id="paint" role="group" aria-label="Paint" hidden>
       <span class="paint-label">Paint</span>
       <div class="paint-swatches">
@@ -166,6 +159,13 @@
     </div>
 
     <div id="edit" role="group" aria-label="Change the chosen shape">
+      <div id="symmetry" role="group" aria-label="Mirror new shapes">
+        <button id="btn-mirror" class="tool tool-mirror" type="button" aria-pressed="false">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5v19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-dasharray="2.4 3.1"/><path d="M9.2 5.5 3.5 12l5.7 6.5Z" fill="currentColor"/><path d="M14.8 5.5 20.5 12l-5.7 6.5Z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg>
+          <span>Mirror</span>
+        </button>
+      </div>
+      <div id="edit-position">
       <button id="btn-bigger" class="tool" type="button" disabled>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
         <span>Bigger</span>
@@ -194,6 +194,12 @@
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9a7 7 0 1 1 2 8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="m5 5 1 4 4-1" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
         <span>Lay down</span>
       </button>
+      <button id="btn-drop" class="tool" type="button" disabled>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v12" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path d="m7 12 5 5 5-5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 20h12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+        <span>Drop</span>
+      </button>
+      </div>
+      <div id="edit-making">
       <button id="btn-unpair" class="tool" type="button" disabled>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8.5 8.5 7 7M15.5 8.5l-7 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path d="M7 5.5 5.5 7a3.5 3.5 0 0 0 0 5l1.5 1.5M17 18.5l1.5-1.5a3.5 3.5 0 0 0 0-5L17 10.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
         <span>Unpair</span>
@@ -210,14 +216,11 @@
         <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="7" width="8.5" height="10" rx="1" fill="none" stroke="currentColor" stroke-width="2.2"/><rect x="12" y="7" width="8.5" height="10" rx="1" fill="none" stroke="currentColor" stroke-width="2.2"/></svg>
         <span>Beside copy</span>
       </button>
-      <button id="btn-drop" class="tool" type="button" disabled>
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v12" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path d="m7 12 5 5 5-5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 20h12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
-        <span>Drop</span>
-      </button>
       <button id="btn-delete" class="tool tool-delete" type="button" disabled data-tour="delete">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path d="M9 7V5h6v2" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M6.5 7 7.6 19h8.8L17.5 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
         <span>Delete</span>
       </button>
+      </div>
     </div>
 
     <a id="backlink" href="https://ichabod-crane.net/">

@@ -237,10 +237,50 @@ html, body {
   gap: 7px;
 }
 
-#palette, #symmetry, #edit {
+#palette {
   display: flex;
   gap: 10px;
 }
+
+#edit {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+  align-items: stretch;
+  flex: 1 1 600px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+#symmetry, #edit-position, #edit-making {
+  display: flex;
+  min-width: 0;
+  gap: 8px;
+}
+
+#symmetry {
+  align-items: flex-start;
+}
+
+#edit-position, #edit-making {
+  flex-wrap: wrap;
+  align-content: flex-start;
+}
+
+#edit .tool {
+  flex: 1 1 68px;
+  min-width: 68px;
+  min-height: 64px;
+}
+
+#symmetry .tool {
+  width: 96px;
+  min-width: 0;
+}
+
+#edit::-webkit-scrollbar { height: 4px; }
+#edit::-webkit-scrollbar-thumb { background: #4dabf7; border-radius: 4px; }
+#edit { scrollbar-color: #4dabf7 transparent; scrollbar-width: thin; }
 
 #starter-shelf {
   display: flex;
@@ -255,9 +295,15 @@ html, body {
 #starter-shelf[hidden] { display: none; }
 #starter-models[hidden] { display: none; }
 
-#symmetry, #edit {
+#edit {
   padding-left: 18px;
   border-left: 2px dashed var(--edge);
+}
+
+@media (min-width: 721px) {
+  #bottombar { flex-wrap: wrap; }
+  #edit { flex: 0 0 100%; order: 4; }
+  #backlink { order: 5; }
 }
 
 /* ---------- buttons ---------- */
@@ -328,6 +374,7 @@ button:disabled {
 /* ---------- back-link ---------- */
 
 #backlink {
+  flex: 0 0 auto;
   margin-left: auto;
   color: var(--ink-soft);
   font-size: 13px;
@@ -451,11 +498,42 @@ button:disabled {
   #hint { order: 6; flex-basis: 100%; }
 
   #hint { font-size: 14px; }
-  #bottombar { gap: 8px 12px; padding: 10px; justify-content: center; }
+  #bottombar {
+    flex-wrap: wrap;
+    align-content: flex-start;
+    gap: 8px 12px;
+    padding: 10px;
+    justify-content: flex-start;
+    overflow-x: hidden;
+  }
+  #palette-wrap { flex: 0 0 100%; order: 0; }
+  #paint, #reshape { order: 2; }
+  #backlink { order: 3; flex: 0 0 100%; }
   /* Once the bar wraps, the dashed rules separate nothing — each group is
      already its own row — and a dash hanging off the end of a line just looks
      like something broke. The rows do the grouping down here. */
-  #symmetry, #edit { padding-left: 0; border-left: none; }
+  #edit {
+    display: flex;
+    flex: 0 0 100%;
+    width: 100%;
+    max-width: 100%;
+    order: 1;
+    padding: 0 0 6px;
+    border-left: none;
+    overflow-x: auto;
+    overflow-y: hidden;
+    justify-content: flex-start;
+    align-items: stretch;
+  }
+  #symmetry, #edit-position, #edit-making {
+    flex: 0 0 auto;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    width: max-content;
+  }
+  #edit-position, #edit-making { align-content: normal; }
+  #edit .tool { flex: 0 0 68px; }
+  #symmetry .tool { flex: 0 0 96px; }
   button { min-width: 62px; min-height: 62px; padding: 5px 7px; }
   .shape { min-width: 68px; min-height: 68px; }
   button span { font-size: 11px; }
@@ -524,7 +602,7 @@ button:disabled {
     position: fixed;
     left: 10px;
     right: 10px;
-    bottom: 70px;
+    bottom: 160px;
     flex: 0 1 100%;
     width: calc(100vw - 20px);
     min-width: 0;
