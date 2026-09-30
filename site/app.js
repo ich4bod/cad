@@ -499,6 +499,21 @@ function buildCar() {
   after('A little car! Change the body or roll the wheels around.');
 }
 
+function buildCastle() {
+  if (shapes.length > 0) return;
+  pushUndo();
+  const s1 = { id: nextId++, kind: 'cube', size: 30, gx: -3, gz: 0, level: 0, twin: null, paint: null, lying: false };
+  const s2 = { id: nextId++, kind: 'cube', size: 30, gx: -3, gz: 0, level: 3, twin: null, paint: null, lying: false };
+  const s3 = { id: nextId++, kind: 'cone', size: 30, gx: -3, gz: 0, level: 6, twin: null, paint: null, lying: false };
+  const s4 = { id: nextId++, kind: 'cube', size: 30, gx: 3, gz: 0, level: 0, twin: null, paint: null, lying: false };
+  const s5 = { id: nextId++, kind: 'cube', size: 30, gx: 3, gz: 0, level: 3, twin: null, paint: null, lying: false };
+  const s6 = { id: nextId++, kind: 'cone', size: 30, gx: 3, gz: 0, level: 6, twin: null, paint: null, lying: false };
+  const s7 = { id: nextId++, kind: 'cube', size: 40, gx: 0, gz: 0, level: 4, twin: null, paint: null, lying: false };
+  shapes.push(s1, s2, s3, s4, s5, s6, s7);
+  selectedId = s7.id;
+  after('A little castle! Raise the bridge or change the towers.');
+}
+
 window.addShape = addShape;
 function addShape(kind) {
   try {
@@ -999,6 +1014,7 @@ const els = {
   starterRobot: document.getElementById('starter-robot'),
   starterRocket: document.getElementById('starter-rocket'),
   starterCar: document.getElementById('starter-car'),
+  starterCastle: document.getElementById('starter-castle'),
 };
 
 /* A first visit gets four concrete gestures, not a mode or a lesson screen.
@@ -1131,6 +1147,7 @@ els.starterSnowman.addEventListener('click', buildSnowman);
 els.starterRobot.addEventListener('click', buildRobot);
 els.starterRocket.addEventListener('click', buildRocket);
 els.starterCar.addEventListener('click', buildCar);
+els.starterCastle.addEventListener('click', buildCastle);
 els.undo.addEventListener('click', undo);
 els.home.addEventListener('click', resetView);
 els.fit.addEventListener('click', fitView);
