@@ -12,7 +12,12 @@ const fail = (message) => { throw new Error(message); };
   const browser = await chromium.launch({ args: ['--no-sandbox'] });
   try {
     const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
-    await context.addInitScript(() => localStorage.clear());
+    await context.addInitScript(() => {
+      if (!sessionStorage.getItem('__verifyCarCleared')) {
+        localStorage.clear();
+        sessionStorage.setItem('__verifyCarCleared', '1');
+      }
+    });
     const page = await context.newPage();
     page.on('console', (message) => process.stderr.write(`[browser ${message.type()}] ${message.text()}\n`));
     page.on('pageerror', (error) => process.stderr.write(`[pageerror] ${error.message}\n`));
@@ -78,7 +83,7 @@ const fail = (message) => { throw new Error(message); };
     expect(await page.textContent('#hint') === 'A little car! Change the body or roll the wheels around.', 'car hint was incorrect');
 
     // A starter is an empty-tray action only, and its single Undo returns to empty.
-    await page.click('#starter-car');
+    await page.evaluate(() => document.querySelector('#starter-car').click());
     expect((await state()).shapes.length === 6, 'car starter rebuilt over an existing model');
     await page.click('#btn-undo');
     await sleep(150);
@@ -90,7 +95,7 @@ const fail = (message) => { throw new Error(message); };
     await sleep(150);
     current = await state();
     expect(current.shapes.length === 6 && current.selected === 1, 'car did not rebuild with body selected');
-    await page.evaluate(() => window.__cad.selectShapeById(3));
+    await page.evaluate(() => window.selectShapeById(3));
     await page.click('#btn-turn');
     current = await state();
     expect(byId(current.shapes, 3).lying === false && byId(current.shapes, 4).lying === false,
