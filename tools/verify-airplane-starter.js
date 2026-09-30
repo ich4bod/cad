@@ -22,7 +22,6 @@ const EPS = 1e-4;
     const page = await context.newPage();
     await page.goto(BASE, { waitUntil: 'networkidle' });
     await page.waitForFunction(() => window.__cad?.ready);
-    if (await page.isVisible('#tour')) await page.click('#tour-skip', { force: true });
 
     const state = () => page.evaluate(() => ({
       shapes: window.__cad.shapes(),
@@ -47,16 +46,31 @@ const EPS = 1e-4;
     }, selector);
     const rotation = (id) => page.evaluate((shapeId) => window.__cad.rotationOf(shapeId), id);
 
-    // All six starter actions fit in the narrow, scroll-free tray.
-    for (const selector of [
+    // All six starter actions fit in the narrow, scroll-free tray, above the
+    // first-visit card, and remain reachable by a real pointer.
+    const starterSelectors = [
       '#starter-snowman', '#starter-robot', '#starter-rocket',
       '#starter-car', '#starter-castle', '#starter-airplane',
-    ]) {
+    ];
+    for (const selector of starterSelectors) {
       const rect = await buttonRect(selector);
       expect(rect?.visible, `${selector} was not visible at 390x844`);
+      expect(rect.bottom - rect.top >= 44,
+        `${selector} was shorter than 44px: ${JSON.stringify(rect)}`);
       expect(rect.left >= 0 && rect.right <= 390 && rect.top >= 0 && rect.bottom <= 844,
         `${selector} was outside the 390x844 viewport: ${JSON.stringify(rect)}`);
+      expect(await page.evaluate((sel) => {
+        const button = document.querySelector(sel);
+        const rect = button.getBoundingClientRect();
+        const hit = document.elementFromPoint((rect.left + rect.right) / 2, (rect.top + rect.bottom) / 2);
+        return hit === button || button.contains(hit);
+      }, selector), `${selector} was covered at its center`);
     }
+    const starterRect = await buttonRect('#starter-models');
+    const tourRect = await buttonRect('#tour');
+    expect(tourRect?.visible, 'tour was not visible on an unfinished visit');
+    expect(starterRect.bottom <= tourRect.top - 16,
+      `starter panel was not separated from tour by 16px: starter=${JSON.stringify(starterRect)}, tour=${JSON.stringify(tourRect)}`);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= 390),
       '390px viewport has horizontal overflow');
 
@@ -163,7 +177,15 @@ const EPS = 1e-4;
     await page.reload({ waitUntil: 'networkidle' });
     await page.waitForFunction(() => window.__cad?.ready);
     expect((await state()).shapes.length === 0, 'empty airplane tray did not persist through reload');
-    expect((await buttonRect('#starter-airplane')).visible, 'airplane starter was not visible on the empty tray');
+    const starterAfterReload = await buttonRect('#starter-airplane');
+    expect(starterAfterReload.visible, 'airplane starter was not visible on the empty tray');
+    expect(await page.isVisible('#tour'), 'unfinished tour was not restored after reload');
+    await page.click('#tour-skip', { force: true });
+    const restingStarter = await buttonRect('#starter-models');
+    expect(Math.abs(844 - restingStarter.bottom - 160) < 1,
+      `starter panel did not return to bottom:160px after Skip: ${JSON.stringify(restingStarter)}`);
+    expect(await page.evaluate(() => !document.body.hasAttribute('data-tour-active')),
+      'Skip did not remove the explicit tour-active state');
 
     process.stdout.write('editable little airplane verified with crossing sideways pieces and undo\n');
   } catch (e) {

@@ -1065,12 +1065,14 @@ let tourTarget = null;
 
 function finishTour() {
   if (tourTarget) delete tourTarget.dataset.tourActive;
+  document.body.removeAttribute('data-tour-active');
   tourTarget = null;
   els.tour.hidden = true;
   try { store?.setItem(TOUR_KEY, 'done'); } catch (e) { /* the tour is optional */ }
 }
 
 function showTourStep() {
+  document.body.dataset.tourActive = 'true';
   if (tourTarget) delete tourTarget.dataset.tourActive;
   const step = tourSteps[tourStep];
   tourTarget = document.querySelector(step.target);

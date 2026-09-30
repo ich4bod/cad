@@ -617,4 +617,8 @@ button:disabled {
     flex-basis: 100%;
     text-align: center;
   }
+
+  [data-tour-active="true"] #starter-models {
+    bottom: 210px;
+  }
 }
