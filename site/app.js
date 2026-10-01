@@ -464,6 +464,7 @@ function buildSnowman() {
   shapes.push(s1, s2, s3);
   selectedId = s3.id;
   after('A snowman! Every ball is yours to change.');
+  requestAnimationFrame(() => fitView());
 }
 
 function buildRobot() {
@@ -481,6 +482,7 @@ function buildRobot() {
   shapes.push(s1, s2, s3, s4);
   selectedId = s3.id;
   after('A robot! Its arms move together.');
+  requestAnimationFrame(() => fitView());
   console.log('buildRobot: done, shapes:', JSON.stringify(shapes));
 }
 
@@ -495,6 +497,7 @@ function buildRocket() {
   shapes.push(s1, s2, s3, s4);
   selectedId = s3.id;
   after('A rocket! Change the nose, body, or fins.');
+  requestAnimationFrame(() => fitView());
 }
 
 function buildCar() {
@@ -511,6 +514,7 @@ function buildCar() {
   shapes.push(s1, s2, s3, s4, s5, s6);
   selectedId = s1.id;
   after('A little car! Change the body or roll the wheels around.');
+  requestAnimationFrame(() => fitView());
 }
 
 function buildCastle() {
@@ -526,6 +530,7 @@ function buildCastle() {
   shapes.push(s1, s2, s3, s4, s5, s6, s7);
   selectedId = s7.id;
   after('A little castle! Raise the bridge or change the towers.');
+  requestAnimationFrame(() => fitView());
 }
 
 function buildAirplane() {
@@ -538,6 +543,7 @@ function buildAirplane() {
   shapes.push(s1, s2, s3, s4);
   selectedId = s1.id;
   after('A little airplane! Turn the wing or reshape the tail.');
+  requestAnimationFrame(() => fitView());
 }
 
 function buildSailboat() {
@@ -551,6 +557,7 @@ function buildSailboat() {
   shapes.push(s1, s2, s3, s4, s5);
   selectedId = s2.id;
   after('A little sailboat! Move it across the plate or repaint every piece.');
+  requestAnimationFrame(() => fitView());
 }
 
 window.addShape = addShape;
@@ -1263,8 +1270,18 @@ function setHint(text) {
 window.updateUI = updateUI;
 window.duplicateSelected = duplicateSelected;
 
-window.addEventListener('resize', updateStarterSpace);
-const starterSpaceObserver = new ResizeObserver(updateStarterSpace);
+let starterLayoutFrame = null;
+function scheduleStarterLayout() {
+  if (starterLayoutFrame !== null) return;
+  starterLayoutFrame = requestAnimationFrame(() => {
+    starterLayoutFrame = null;
+    updateStarterSpace();
+    if (camera.view?.enabled) fitView();
+  });
+}
+
+window.addEventListener('resize', scheduleStarterLayout);
+const starterSpaceObserver = new ResizeObserver(scheduleStarterLayout);
 for (const element of [
   document.getElementById('topbar'),
   document.getElementById('bottombar'),
@@ -1493,8 +1510,10 @@ function resetView() {
   const damping = controls.enableDamping;
   controls.enableDamping = false;
   controls.update();
+  camera.clearViewOffset();
   camera.position.copy(initialCamera);
   controls.target.copy(initialTarget);
+  camera.updateProjectionMatrix();
   controls.update();
   controls.enableDamping = damping;
   setHint('View reset.');
@@ -1518,13 +1537,29 @@ function fitView() {
   if (direction.lengthSq() === 0) return;
   direction.normalize();
 
+  const rect = canvas.getBoundingClientRect();
+  const topbar = document.getElementById('topbar').getBoundingClientRect();
+  const bottombar = document.getElementById('bottombar').getBoundingClientRect();
+  const tourRect = els.tour.getBoundingClientRect();
+  const tourVisible = !els.tour.hidden && getComputedStyle(els.tour).display !== 'none';
+  const top = Math.max(0, topbar.bottom - rect.top) + 16;
+  const bottom = Math.min(
+    rect.height,
+    bottombar.top - rect.top,
+    ...(tourVisible ? [tourRect.top - rect.top] : []),
+  ) - 16;
+  const usableHeight = Math.max(44, bottom - top);
+  const centerY = (top + bottom) / 2;
   const verticalHalf = THREE.MathUtils.degToRad(camera.fov / 2);
+  const safeVerticalHalf = Math.atan(Math.tan(verticalHalf) * usableHeight / rect.height);
   const horizontalHalf = Math.atan(Math.tan(verticalHalf) * camera.aspect);
-  const limitingHalf = Math.min(verticalHalf, horizontalHalf);
-  const distance = clamp(sphere.radius / Math.sin(limitingHalf) * 1.18, 60, 900);
+  const distance = Math.max(60, sphere.radius / Math.sin(Math.min(safeVerticalHalf, horizontalHalf)) * 1.18);
 
   controls.target.copy(sphere.center);
+  controls.maxDistance = Math.max(900, distance * 1.25);
   camera.position.copy(sphere.center).add(direction.multiplyScalar(distance));
+
+  camera.setViewOffset(rect.width, rect.height, 0, rect.height / 2 - centerY, rect.width, rect.height);
 
   const nearest = Math.max(0.01, distance - sphere.radius);
   const farthest = distance + sphere.radius;
